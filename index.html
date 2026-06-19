@@ -1,0 +1,2098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>SunWealth Investment Ltd | Solar Assets Platform</title>
+    
+    <!-- Firebase SDK v7.20.0 -->
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.20.0/firebase-firestore.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+        <!-- Global Activity Ticker -->
+    <div id="activity-ticker" class="activity-ticker">
+        <div class="ticker-content" id="ticker-content"></div>
+    </div>
+    <!-- Overlay for sidebar -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <span>☀️</span> SunWealth
+            </div>
+            <button class="sidebar-close" onclick="toggleSidebar()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="sidebar-user" id="sidebar-user" style="display:none;">
+            <div class="user-avatar">👤</div>
+            <div class="user-details">
+                <div class="user-name" id="sidebar-username">User</div>
+                <div class="user-role" id="sidebar-userrole">Investor</div>
+            </div>
+        </div>
+        
+        <!-- User Navigation -->
+        <nav class="sidebar-nav" id="sidebar-nav-user" style="display:none;">
+            <a href="#" class="sidebar-link active" data-page="home" onclick="navigateTo('home');toggleSidebar();">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="#" class="sidebar-link" data-page="packages" onclick="navigateTo('packages');toggleSidebar();">
+                <i class="fas fa-solar-panel"></i> SunWealth Packages
+            </a>
+            <a href="#" class="sidebar-link" data-page="investments" onclick="navigateTo('investments');toggleSidebar();">
+                <i class="fas fa-chart-line"></i> My Investments
+            </a>
+            <a href="#" class="sidebar-link" data-page="wallet" onclick="navigateTo('wallet');toggleSidebar();">
+                <i class="fas fa-wallet"></i> My Wallet
+            </a>
+            <a href="#" class="sidebar-link" data-page="profile" onclick="navigateTo('profile');toggleSidebar();">
+    <i class="fas fa-user-circle"></i> Wasifu
+</a>
+            <a href="#" class="sidebar-link" data-page="transactions" onclick="navigateTo('transactions');toggleSidebar();">
+                <i class="fas fa-history"></i> History
+            </a>
+            <a href="#" class="sidebar-link" data-page="referral" onclick="navigateTo('referral');toggleSidebar();">
+                <i class="fas fa-users"></i> Referral
+            </a>
+            <a href="#" class="sidebar-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+        
+        <!-- Admin Navigation -->
+        <nav class="sidebar-nav" id="sidebar-nav-admin" style="display:none;">
+            <a href="#" class="sidebar-link active" data-page="admin-dashboard" onclick="navigateTo('admin-dashboard');toggleSidebar();">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="#" class="sidebar-link" data-page="pending-approvals" onclick="navigateTo('pending-approvals');toggleSidebar();">
+                <i class="fas fa-clock"></i> Pending Approvals
+            </a>
+            <a href="#" class="sidebar-link" data-page="all-transactions" onclick="navigateTo('all-transactions');toggleSidebar();">
+                <i class="fas fa-list"></i> All Transactions
+            </a>
+            <a href="#" class="sidebar-link" data-page="user-management" onclick="navigateTo('user-management');toggleSidebar();">
+                <i class="fas fa-users-cog"></i> User Management
+            </a>
+            <!-- In sidebar-nav-admin and sidebar-nav-superadmin -->
+<a href="#" class="sidebar-link" data-page="bank-accounts" onclick="navigateTo('bank-accounts');toggleSidebar();">
+    <i class="fas fa-university"></i> Bank Accounts
+</a>
+<a href="#" class="sidebar-link" data-page="social-links" onclick="navigateTo('social-links');toggleSidebar();">
+    <i class="fas fa-share-alt"></i> Social Links
+</a>
+<a href="#" class="sidebar-link" data-page="solar-projects" onclick="navigateTo('solar-projects');toggleSidebar();">
+    <i class="fas fa-solar-panel"></i> Miradi ya Jua
+</a>
+            <a href="#" class="sidebar-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+        
+        <!-- Super Admin Navigation -->
+        <nav class="sidebar-nav" id="sidebar-nav-superadmin" style="display:none;">
+            <a href="#" class="sidebar-link active" data-page="super-dashboard" onclick="navigateTo('super-dashboard');toggleSidebar();">
+                <i class="fas fa-tachometer-alt"></i> Overview
+            </a>
+            <a href="#" class="sidebar-link" data-page="pending-approvals" onclick="navigateTo('pending-approvals');toggleSidebar();">
+                <i class="fas fa-clock"></i> Approvals
+            </a>
+            <a href="#" class="sidebar-link" data-page="all-transactions" onclick="navigateTo('all-transactions');toggleSidebar();">
+                <i class="fas fa-list"></i> Transactions
+            </a>
+            <a href="#" class="sidebar-link" data-page="user-management" onclick="navigateTo('user-management');toggleSidebar();">
+                <i class="fas fa-users-cog"></i> Users
+            </a>
+            <a href="#" class="sidebar-link" data-page="system-config" onclick="navigateTo('system-config');toggleSidebar();">
+                <i class="fas fa-cogs"></i> Settings
+            </a>
+            <a href="#" class="sidebar-link" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-content" id="main-content">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="hamburger-btn" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <span>☀️</span> SunWealth
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <button class="btn btn-sm" onclick="showLoginModal()">Login</button>
+                    <button class="btn btn-primary btn-sm" onclick="showSignupModal()">Sign Up</button>
+                </div>
+                <div class="user-info" id="user-info" style="display:none;">
+                    <span class="user-greeting" id="user-display-name"></span>
+                </div>
+            </div>
+        </header>
+
+
+
+        <!-- Page Content -->
+        <div class="page-container" id="page-container">
+<!-- Home Page -->
+<section id="home-section" class="page-section">
+        <!-- Hero Section -->
+    <div class="hero">
+        <h1>Invest in Solar Energy with <span>SunWealth</span></h1>
+        <p class="subtitle">Earn daily income from high-tech solar farms. Start with just TZS 7,000.</p>
+    </div>
+    <div class="slideshow-container" id="home-slideshow">
+        <div class="slides-wrapper" id="slides-wrapper">
+            <!-- Slides loaded dynamically -->
+        </div>
+        
+        <!-- Navigation Arrows -->
+        <button class="slide-arrow slide-prev" onclick="changeSlide(-1)" aria-label="Previous slide">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="slide-arrow slide-next" onclick="changeSlide(1)" aria-label="Next slide">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <!-- Dots Navigation -->
+        <div class="slide-dots" id="slide-dots"></div>
+        
+        <!-- Loading -->
+        <div id="slideshow-loading">
+            <div style="text-align:center;color:var(--text-secondary);">
+                <i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--accent-solar);margin-bottom:1rem;display:block;"></i>
+                <span>Inapakia slideshow...</span>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- Investment Packages Grid -->
+    <h2 class="section-title">💰 Investment Packages</h2>
+    <div class="package-grid" id="package-grid"></div>
+    
+    <!-- Global Activity Log -->
+    <h2 class="section-title">🌍 Live Activity</h2>
+    <div class="activity-log card" id="activity-log"></div>
+</section>
+
+            <!-- Packages Page -->
+            <section id="packages-section" class="page-section" style="display:none;">
+                <h2>☀️ SunWealth Packages</h2>
+                <p class="subtitle" style="margin-bottom:1.5rem;">Choose your investment plan and start earning daily</p>
+                <div class="package-grid" id="packages-page-grid"></div>
+            </section>
+            
+            <!-- Profile Page Section -->
+<section id="profile-section" class="page-section" style="display:none;">
+    <h2>👤 Wasifu Wangu</h2>
+    
+    <!-- Profile Card -->
+    <div class="card" style="text-align:center;margin-bottom:1.5rem;">
+        <div style="font-size:4rem;margin-bottom:0.5rem;">👤</div>
+        <h3 id="profile-username" style="margin-bottom:0.3rem;">-</h3>
+        <p style="color:var(--text-secondary);" id="profile-email">-</p>
+        <p style="color:var(--accent-solar);font-weight:600;" id="profile-role">-</p>
+    </div>
+    
+    <!-- Quick Action Buttons -->
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+        <button class="card metric-card" onclick="showDepositModal()" style="cursor:pointer;border:1px solid var(--accent-solar);text-align:center;">
+            <div style="font-size:2rem;">📥</div>
+            <div style="font-weight:600;color:var(--accent-solar);">Weka Amana</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);">Deposit</div>
+        </button>
+        <button class="card metric-card" onclick="showWithdrawModal()" style="cursor:pointer;border:1px solid var(--accent-warning);text-align:center;">
+            <div style="font-size:2rem;">📤</div>
+            <div style="font-weight:600;color:var(--accent-warning);">Toa Pesa</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);">Withdraw</div>
+        </button>
+        <button class="card metric-card" onclick="navigateTo('investments')" style="cursor:pointer;border:1px solid var(--accent-info);text-align:center;">
+            <div style="font-size:2rem;">📊</div>
+            <div style="font-weight:600;color:var(--accent-info);">Uwekezaji Wangu</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);">My Investments</div>
+        </button>
+        <button class="card metric-card" onclick="navigateTo('transactions')" style="cursor:pointer;border:1px solid #9b59b6;text-align:center;">
+            <div style="font-size:2rem;">📜</div>
+            <div style="font-weight:600;color:#9b59b6;">Historia</div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);">History</div>
+        </button>
+    </div>
+    
+    <!-- User Details -->
+    <h3>📋 Maelezo Binafsi</h3>
+    <div class="card" style="margin-bottom:1rem;">
+        <table style="width:100%;font-size:0.9rem;">
+            <tr>
+                <td style="color:var(--text-secondary);padding:0.5rem 0;">👤mtumiaji:</td>
+                <td><strong id="detail-username">-</strong></td>
+            </tr>
+            <tr>
+                <td style="color:var(--text-secondary);padding:0.5rem 0;">📧 Barua Pepe:</td>
+                <td><strong id="detail-email">-</strong></td>
+            </tr>
+            <tr>
+                <td style="color:var(--text-secondary);padding:0.5rem 0;">📱 Namba ya Simu:</td>
+                <td><strong id="detail-phone">-</strong></td>
+            </tr>
+            <tr>
+                <td style="color:var(--text-secondary);padding:0.5rem 0;">🔑 Namba ya Ushirika:</td>
+                <td><strong style="color:var(--accent-solar);" id="detail-referral">-</strong></td>
+            </tr>
+            <tr>
+                <td style="color:var(--text-secondary);padding:0.5rem 0;">📅 Tarehe ya Kujiunga:</td>
+                <td><strong id="detail-joined">-</strong></td>
+            </tr>
+        </table>
+    </div>
+    
+    <!-- Edit Profile Button -->
+    <button class="btn btn-primary" onclick="showEditProfileModal()" style="width:100%;margin-bottom:0.5rem;">
+        ✏️ Hariri Wasifu
+    </button>
+    
+    <!-- Logout Button -->
+    <button class="btn btn-danger" onclick="logout()" style="width:100%;">
+        🚪 Toka (Logout)
+    </button>
+</section>
+
+<!-- Edit Profile Modal -->
+<div id="edit-profile-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('edit-profile-modal')">&times;</span>
+        <h2>✏️ Hariri Wasifu</h2>
+        <form id="edit-profile-form" onsubmit="saveProfile(event)">
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Jina Kamili</label>
+            <input type="text" id="edit-username" class="input-field" placeholder="Jina lako kamili" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Namba ya Simu</label>
+            <input type="tel" id="edit-phone" class="input-field" placeholder="Mfano: +255 712 345 678" required>
+            
+            <div id="edit-profile-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;">💾 Hifadhi Mabadiliko</button>
+        </form>
+    </div>
+</div>
+
+<!-- My Investments Page -->
+<section id="investments-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-chart-line"></i> Uwekezaji Wangu Hai</h2>
+    
+    <!-- Summary Cards -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="border-left:3px solid var(--accent-solar);">
+            <div class="metric-label"><i class="fas fa-coins"></i> Jumla Imewekezwa</div>
+            <div class="metric-value" id="inv-total-invested">TZS 0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid #9b59b6;">
+            <div class="metric-label"><i class="fas fa-piggy-bank"></i> Mapato Yote</div>
+            <div class="metric-value" style="color:#9b59b6;" id="inv-total-earned">TZS 0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-info);">
+            <div class="metric-label"><i class="fas fa-clock"></i> Inayoendelea</div>
+            <div class="metric-value" style="color:var(--accent-info);" id="inv-active-count">0</div>
+        </div>
+    </div>
+    
+    <!-- Real-Time Earnings Ticker -->
+    <div class="card" style="background:linear-gradient(135deg, rgba(0,230,118,0.05), rgba(33,150,243,0.05));border:1px solid var(--accent-solar);text-align:center;margin-bottom:1.5rem;">
+        <div style="font-size:0.8rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;">
+            <i class="fas fa-bolt"></i> Mapato Yanayoingia Sasa Hivi
+        </div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--accent-solar);" id="inv-realtime-earnings">
+            TZS 0.00
+        </div>
+        <div style="font-size:0.7rem;color:var(--text-secondary);">
+            Inaongezeka kila sekunde
+        </div>
+    </div>
+    
+    <!-- Active Investments List -->
+    <h3><i class="fas fa-list-alt"></i> Vifurushi Vinavyoendelea</h3>
+    <div id="active-investments-list">
+        <p style="color:var(--text-secondary);text-align:center;padding:2rem;">
+            <i class="fas fa-spinner fa-spin"></i> Inapakia uwekezaji...
+        </p>
+    </div>
+</section>
+
+            <!-- Wallet Page -->
+            <section id="wallet-section" class="page-section" style="display:none;">
+                <h2>💼 My Wallet</h2>
+                <div class="grid-2">
+                    <div class="card metric-card">
+                        <div class="metric-label">Balance</div>
+                        <div class="metric-value" id="wallet-balance">TZS 0</div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="metric-label">Today's Income</div>
+                        <div class="metric-value" id="wallet-today-income">TZS 0</div>
+                    </div>
+                </div>
+                <div class="flex-row" style="margin:1.5rem 0;">
+                    <button class="btn btn-primary" onclick="showDepositModal()"><i class="fas fa-plus"></i> Deposit</button>
+                    <button class="btn btn-warning" onclick="showWithdrawModal()"><i class="fas fa-minus"></i> Withdraw</button>
+                </div>
+                <h3>Recent Transactions</h3>
+                <div class="card" id="wallet-transactions"></div>
+            </section>
+
+            <!-- Transactions Page -->
+            <section id="transactions-section" class="page-section" style="display:none;">
+                <h2>📜 Transaction History</h2>
+                <div class="flex-row" style="margin-bottom:1rem;">
+                    <select id="txn-filter-type" class="input-field" style="width:auto;">
+                        <option value="all">All Types</option>
+                        <option value="deposit">Deposits</option>
+                        <option value="withdrawal">Withdrawals</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="refreshTransactions()">Filter</button>
+                </div>
+                <div class="card" id="all-user-transactions"></div>
+            </section>
+
+<!-- Referral Page Section -->
+<section id="referral-section" class="page-section" style="display:none;">
+    <h2>🤝 Programu ya Ushirika (Referral)</h2>
+    
+    <!-- Referral Link Card -->
+    <div class="card" style="text-align:center;margin-bottom:1.5rem;border:2px solid var(--accent-solar);">
+        <h3 style="color:var(--accent-solar);margin-bottom:0.5rem;">🔗 Kiungo Chako cha Ushirika</h3>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">
+            Washiriki wapya wakijiunga kupitia kiungo chako, utapata <strong style="color:var(--accent-solar);">10% ya amana yao ya kwanza</strong>!
+        </p>
+        
+        <!-- Referral Link Display -->
+        <div style="background:#0d1117;border:1px solid var(--border-subtle);border-radius:8px;padding:0.8rem;margin-bottom:0.8rem;word-break:break-all;">
+            <code id="referral-link" style="color:var(--accent-info);font-size:0.85rem;">-</code>
+        </div>
+        
+        <div class="flex-row" style="justify-content:center;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="copyReferralLink()">
+                📋 Nakili Kiungo
+            </button>
+            <button class="btn btn-info" onclick="shareReferralLink()">
+                📤 Shiriki kwa WhatsApp
+            </button>
+        </div>
+    </div>
+    
+    <!-- Referral Code Card -->
+    <div class="card" style="text-align:center;margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:0.5rem;">🔑 Namba ya Ushirika</h3>
+        <div style="font-size:2rem;font-weight:700;color:var(--accent-solar);letter-spacing:2px;" id="referral-code-display">---</div>
+        <p style="color:var(--text-secondary);font-size:0.85rem;">Mshiriki anaweza kutumia namba hii wakati wa kujisajili</p>
+        <button class="btn btn-primary btn-sm" onclick="copyReferralCode()">
+            📋 Nakili Namba
+        </button>
+    </div>
+    
+    <!-- How It Works -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;">ℹ️ Jinsi Inavyofanya Kazi</h3>
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div style="display:flex;gap:0.8rem;align-items:center;">
+                <div style="min-width:35px;height:35px;border-radius:50%;background:var(--accent-solar);color:#0d1117;display:flex;align-items:center;justify-content:center;font-weight:700;">1</div>
+                <div style="flex:1;font-size:0.9rem;">Shiriki kiungo chako au namba ya ushirika na marafiki</div>
+            </div>
+            <div style="display:flex;gap:0.8rem;align-items:center;">
+                <div style="min-width:35px;height:35px;border-radius:50%;background:var(--accent-solar);color:#0d1117;display:flex;align-items:center;justify-content:center;font-weight:700;">2</div>
+                <div style="flex:1;font-size:0.9rem;">Mshiriki wako ajisajili na kuweka amana ya kwanza</div>
+            </div>
+            <div style="display:flex;gap:0.8rem;align-items:center;">
+                <div style="min-width:35px;height:35px;border-radius:50%;background:var(--accent-solar);color:#0d1117;display:flex;align-items:center;justify-content:center;font-weight:700;">3</div>
+                <div style="flex:1;font-size:0.9rem;">Pata <strong style="color:var(--accent-solar);">10%</strong> ya amana yao ya kwanza moja kwa moja kwenye salio lako!</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Referral Earnings Summary -->
+    <div class="grid-2" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="text-align:center;">
+            <div class="metric-label">💰 Jumla ya Bonasi</div>
+            <div class="metric-value" style="color:var(--accent-solar);" id="referral-earnings-display">TZS 0</div>
+        </div>
+        <div class="card metric-card" style="text-align:center;">
+            <div class="metric-label">👥 Jumla ya Washirika</div>
+            <div class="metric-value" style="color:var(--accent-info);" id="referral-total-count">0</div>
+        </div>
+    </div>
+    
+    <!-- Referral List -->
+    <h3>📋 Orodha ya Washirika Wangu</h3>
+    <div class="card" id="referral-history-list">
+        <p style="color:var(--text-secondary);text-align:center;padding:1rem;">
+            <span class="loading-spinner"></span> Inapakia orodha ya washirika...
+        </p>
+    </div>
+</section>
+
+            
+<!-- Admin Dashboard Section -->
+<section id="admin-dashboard-section" class="page-section" style="display:none;">
+    <h2>📊 Admin Dashboard</h2>
+    
+    <!-- Quick Stats Row 1 -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="border-left:3px solid var(--accent-warning);">
+            <div class="metric-label">⏳ Zinazosubiri</div>
+            <div class="metric-value" style="color:var(--accent-warning);" id="admin-pending-count">0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-solar);">
+            <div class="metric-label">📥 Amana Zinasubiri</div>
+            <div class="metric-value" id="admin-pending-deposits">0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-info);">
+            <div class="metric-label">📤 Utoaji Unasubiri</div>
+            <div class="metric-value" style="color:var(--accent-info);" id="admin-pending-withdrawals">0</div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats Row 2 -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card">
+            <div class="metric-label">👥 Jumla ya Wateja</div>
+            <div class="metric-value" id="admin-total-users">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label">💼 Wawekezaji</div>
+            <div class="metric-value" id="admin-total-investors">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label">📊 Uwekezaji Hai</div>
+            <div class="metric-value" style="color:var(--accent-info);" id="admin-active-investments">0</div>
+        </div>
+    </div>
+    
+    <!-- Financial Stats -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="border-left:3px solid var(--accent-solar);">
+            <div class="metric-label">✅ Imeidhinishwa Leo</div>
+            <div class="metric-value" id="admin-approved-today">0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-solar);">
+            <div class="metric-label">💰 Jumla ya Amana</div>
+            <div class="metric-value" style="color:var(--accent-solar);" id="admin-total-deposits">TZS 0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-warning);">
+            <div class="metric-label">💸 Jumla ya Utoaji</div>
+            <div class="metric-value" style="color:var(--accent-warning);" id="admin-total-withdrawals">TZS 0</div>
+        </div>
+    </div>
+    
+    <!-- Referral & Investment Stats -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="border-left:3px solid #9b59b6;">
+            <div class="metric-label">🤝 Bonasi za Ushirika</div>
+            <div class="metric-value" style="color:#9b59b6;" id="admin-total-bonus">TZS 0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label">🔢 Idadi ya Bonasi</div>
+            <div class="metric-value" id="admin-bonus-count">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label">💵 Jumla Imewekezwa</div>
+            <div class="metric-value" style="color:var(--accent-solar);" id="admin-total-invested">TZS 0</div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex-row" style="gap:0.8rem;margin-bottom:1.5rem;">
+        <button class="btn btn-primary" onclick="navigateTo('pending-approvals')" style="flex:1;padding:0.8rem;">
+            📋 Maombi Yanayosubiri
+        </button>
+        <button class="btn btn-info" onclick="navigateTo('all-transactions')" style="flex:1;padding:0.8rem;">
+            📜 Historia ya Miramala
+        </button>
+    </div>
+    
+    <!-- Recent Activities -->
+    <h3>🕐 Shughuli za Hivi Karibuni</h3>
+    <div class="card" id="admin-recent-activities">
+        <p style="color:var(--text-secondary);">Inapakia...</p>
+    </div>
+</section>
+
+<!-- Solar Projects Management Page -->
+<section id="solar-projects-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-solar-panel"></i> Usimamizi wa Miradi ya Jua</h2>
+    
+    <button class="btn btn-primary" onclick="showAddSolarProjectModal()" style="margin-bottom:1rem;">
+        <i class="fas fa-plus"></i> Ongeza Mradi Mpya
+    </button>
+    
+    <div class="card" id="solar-projects-admin-list">
+        <p style="color:var(--text-secondary);text-align:center;padding:2rem;">
+            <i class="fas fa-spinner fa-spin"></i> Inapakia miradi...
+        </p>
+    </div>
+</section>
+
+<!-- Add/Edit Solar Project Modal -->
+<div id="solar-project-modal" class="modal">
+    <div class="modal-content card" style="max-width:600px;">
+        <span class="close" onclick="closeModal('solar-project-modal')">&times;</span>
+        <h2 id="solar-project-modal-title">
+            <i class="fas fa-solar-panel"></i> Ongeza Mradi wa Jua
+        </h2>
+        <form id="solar-project-form" onsubmit="saveSolarProject(event)">
+            <input type="hidden" id="solar-project-edit-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-heading"></i> Kichwa cha Mradi *
+            </label>
+            <input type="text" id="solar-project-title" class="input-field" 
+                   placeholder="Mfano: Solar Farm Dodoma" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-align-left"></i> Maelezo ya Mradi *
+            </label>
+            <textarea id="solar-project-description" class="input-field" 
+                      placeholder="Eleza kuhusu mradi huu..." rows="3" required></textarea>
+            
+            <div class="grid-2" style="gap:1rem;">
+                <div>
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">
+                        <i class="fas fa-image"></i> Kiungo cha Picha (Image URL) *
+                    </label>
+                    <input type="url" id="solar-project-image" class="input-field" 
+                           placeholder="https://images.unsplash.com/..." required>
+                    <small style="color:var(--text-secondary);font-size:0.7rem;">
+                        Picha itaonekana kwenye slideshow
+                    </small>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">
+                        <i class="fas fa-link"></i> Kiungo cha Mradi (Optional)
+                    </label>
+                    <input type="url" id="solar-project-link" class="input-field" 
+                           placeholder="https://...">
+                </div>
+            </div>
+            
+            <div class="grid-2" style="gap:1rem;">
+                <div>
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">
+                        <i class="fab fa-youtube"></i> Kiungo cha YouTube (Optional)
+                    </label>
+                    <input type="url" id="solar-project-youtube" class="input-field" 
+                           placeholder="https://youtube.com/watch?v=...">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem;color:var(--text-secondary);">
+                        <i class="fas fa-video"></i> Kiungo cha Video (Optional)
+                    </label>
+                    <input type="url" id="solar-project-video" class="input-field" 
+                           placeholder="https://...">
+                </div>
+            </div>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-tag"></i> Aina ya Mradi
+            </label>
+            <select id="solar-project-type" class="input-field">
+                <option value="solar_farm">☀️ Shamba la Jua (Solar Farm)</option>
+                <option value="rooftop">🏠 Paa la Jua (Rooftop Solar)</option>
+                <option value="battery">🔋 Hifadhi ya Betri (Battery Storage)</option>
+                <option value="industrial">🏭 Kiwandani (Industrial)</option>
+                <option value="community">🏘️ Jumuiya (Community)</option>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-sort"></i> Nafasi ya Kuonekana
+            </label>
+            <input type="number" id="solar-project-order" class="input-field" 
+                   value="0" min="0" placeholder="0 = mwisho">
+            
+            <label class="checkbox-label">
+                <input type="checkbox" id="solar-project-active" checked>
+                <i class="fas fa-eye"></i> Inaonekana (Active)
+            </label>
+            
+            <div id="solar-project-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-save"></i> Hifadhi Mradi
+            </button>
+        </form>
+    </div>
+</div>
+
+            <!-- Pending Approvals Page -->
+            <section id="pending-approvals-section" class="page-section" style="display:none;">
+                <h2>⏳ Pending Approvals</h2>
+                <div id="pending-approvals-list"></div>
+            </section>
+
+            <!-- All Transactions Page (Admin) -->
+            <section id="all-transactions-section" class="page-section" style="display:none;">
+                <h2>📋 All Transactions</h2>
+                <div class="flex-row" style="margin-bottom:1rem;">
+                    <select id="admin-filter-type" class="input-field" style="width:auto;">
+                        <option value="all">All</option><option value="deposit">Deposits</option><option value="withdrawal">Withdrawals</option>
+                    </select>
+                    <select id="admin-filter-status" class="input-field" style="width:auto;">
+                        <option value="all">All</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option>
+                    </select>
+                    <button class="btn btn-primary btn-sm" onclick="refreshAdminTransactions()">Filter</button>
+                </div>
+                <div class="card" id="admin-all-transactions"></div>
+            </section>
+
+<!-- Bank Accounts Management Page (Admin) -->
+<section id="bank-accounts-section" class="page-section" style="display:none;">
+    <h2>🏦 Bank Account Management</h2>
+    <button class="btn btn-primary" onclick="showAddBankModal()" style="margin-bottom:1rem;">
+        <i class="fas fa-plus"></i> Add Bank Account
+    </button>
+    <div class="card" id="bank-accounts-list">
+        <p style="color:var(--text-secondary);">Loading bank accounts...</p>
+    </div>
+</section>
+
+<!-- Social Links Management Page (Admin) -->
+<section id="social-links-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-share-alt"></i> Social Media Links Management</h2>
+    
+    <button class="btn btn-primary" onclick="showAddSocialLinkModal()" style="margin-bottom:1rem;">
+        <i class="fas fa-plus"></i> Add Social Link
+    </button>
+    
+    <div class="card" id="social-links-admin-list">
+        <p style="color:var(--text-secondary);text-align:center;padding:1rem;">
+            <i class="fas fa-spinner fa-spin"></i> Loading social links...
+        </p>
+    </div>
+</section>
+
+<!-- Add/Edit Bank Account Modal (Admin) -->
+<div id="bank-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('bank-modal')">&times;</span>
+        <h2 id="bank-modal-title">🏦 Add Payment Method</h2>
+        <form id="bank-form" onsubmit="saveBankAccount(event)">
+            <input type="hidden" id="bank-edit-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Account Type</label>
+            <select id="bank-type" class="input-field" required onchange="updateProviderOptions()">
+                <option value="">Select Account Type</option>
+                <optgroup label="📱 Tanzania Mobile Money">
+                    <option value="mpesa">M-Pesa (Vodacom)</option>
+                    <option value="tigopesa">Tigo Pesa (Tigo)</option>
+                    <option value="airtel_money">Airtel Money (Airtel)</option>
+                    <option value="halopesa">HaloPesa (Halotel)</option>
+                    <option value="ezypesa">EzyPesa (Zantel)</option>
+                    <option value="ttcl_pesa">TTCL Pesa (TTCL)</option>
+                </optgroup>
+                <optgroup label="🏛️ Tanzania Banks">
+                    <option value="crdb">CRDB Bank</option>
+                    <option value="nmb">NMB Bank</option>
+                    <option value="exim">Exim Bank</option>
+                    <option value="stanbic">Stanbic Bank</option>
+                    <option value="kcb">KCB Bank</option>
+                    <option value="absa">ABSA Bank (Barclays)</option>
+                    <option value="dtb">Diamond Trust Bank (DTB)</option>
+                    <option value="equity">Equity Bank</option>
+                    <option value="bo t">Bank of Tanzania (BOT)</option>
+                    <option value="posta">Tanzania Postal Bank (TPB)</option>
+                    <option value="maendeleo">Maendeleo Bank</option>
+                    <option value="mkombozi">Mkombozi Bank</option>
+                    <option value="access">Access Bank</option>
+                    <option value="dcb">DCB Commercial Bank</option>
+                </optgroup>
+                <optgroup label="₿ Cryptocurrency">
+                    <option value="usdt_trc20">USDT (TRC-20)</option>
+                    <option value="usdt_erc20">USDT (ERC-20)</option>
+                    <option value="btc">Bitcoin (BTC)</option>
+                    <option value="eth">Ethereum (ETH)</option>
+                    <option value="bnb">Binance Coin (BNB)</option>
+                </optgroup>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Provider Display Name</label>
+            <input type="text" id="bank-name" class="input-field" placeholder="e.g., M-Pesa Tanzania, CRDB Bank" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Account Holder Name</label>
+            <input type="text" id="bank-account-name" class="input-field" placeholder="Full name on the account" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Account Number / Phone Number</label>
+            <input type="text" id="bank-account-number" class="input-field" placeholder="e.g., 0712 345 678 or 0123456789" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Payment Instructions for Users</label>
+            <textarea id="bank-instructions" class="input-field" placeholder="Step-by-step instructions on how to send payment..." rows="4" required></textarea>
+            
+            <label class="checkbox-label">
+                <input type="checkbox" id="bank-is-active" checked>
+                Active (Visible to users making deposits)
+            </label>
+            
+            <div id="bank-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;">💾 Save Payment Method</button>
+        </form>
+    </div>
+</div>
+
+<!-- User Management Page -->
+<section id="user-management-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-users-cog"></i> Usimamizi wa Wateja</h2>
+    
+    <!-- Stats Cards -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-users"></i> Jumla ya Wateja</div>
+            <div class="metric-value" id="um-total-users">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-user-check"></i> Walio Hai</div>
+            <div class="metric-value" style="color:var(--accent-solar);" id="um-active-users">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-user-slash"></i> Waliozuiliwa</div>
+            <div class="metric-value" style="color:var(--danger);" id="um-inactive-users">0</div>
+        </div>
+    </div>
+    
+    <!-- Search & Filter -->
+    <div class="flex-row" style="margin-bottom:1rem;gap:0.5rem;">
+        <input type="text" id="um-search" class="input-field" placeholder="Tafuta kwa jina, barua pepe, au simu..." style="flex:1;">
+        <select id="um-filter-role" class="input-field" style="width:150px;">
+            <option value="all">Wote</option>
+            <option value="user">Wawekezaji</option>
+            <option value="admin">Wasimamizi</option>
+            <option value="superadmin">Wasimamizi Wakuu</option>
+        </select>
+        <select id="um-filter-status" class="input-field" style="width:150px;">
+            <option value="all">Hali Zote</option>
+            <option value="active">Walio Hai</option>
+            <option value="inactive">Waliozuiliwa</option>
+        </select>
+        <button class="btn btn-primary" onclick="refreshUserManagement()">
+            <i class="fas fa-search"></i> Tafuta
+        </button>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="card" id="user-management-table" style="overflow-x:auto;">
+        <p style="color:var(--text-secondary);text-align:center;padding:2rem;">
+            <i class="fas fa-spinner fa-spin"></i> Inapakia wateja...
+        </p>
+    </div>
+</section>
+
+<!-- View User Details Modal -->
+<div id="view-user-modal" class="modal">
+    <div class="modal-content card" style="max-width:600px;">
+        <span class="close" onclick="closeModal('view-user-modal')">&times;</span>
+        <h2><i class="fas fa-user"></i> Maelezo ya Mteja</h2>
+        <div id="view-user-content">
+            <p style="text-align:center;color:var(--text-secondary);">Inapakia...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Modal -->
+<div id="edit-user-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('edit-user-modal')">&times;</span>
+        <h2><i class="fas fa-edit"></i> Hariri Mteja</h2>
+        <form id="edit-user-form" onsubmit="saveUserEdit(event)">
+            <input type="hidden" id="edit-user-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-user"></i> Jina la Mtumiaji
+            </label>
+            <input type="text" id="edit-user-username" class="input-field" placeholder="Username" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-envelope"></i> Barua Pepe
+            </label>
+            <input type="email" id="edit-user-email" class="input-field" placeholder="Email" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-phone"></i> Namba ya Simu
+            </label>
+            <input type="text" id="edit-user-phone" class="input-field" placeholder="Phone">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-shield-alt"></i> Wadhifa (Role)
+            </label>
+            <select id="edit-user-role" class="input-field" required>
+                <option value="user">Mwekezaji (User)</option>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-toggle-on"></i> Hali
+            </label>
+            <select id="edit-user-status" class="input-field" required>
+                <option value="active">Hai (Active)</option>
+                <option value="inactive">Imezuiliwa (Inactive)</option>
+            </select>
+            
+            <div id="edit-user-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-save"></i> Hifadhi Mabadiliko
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Add Balance/Bonus Modal -->
+<div id="add-balance-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('add-balance-modal')">&times;</span>
+        <h2><i class="fas fa-coins"></i> Ongeza Salio / Bonasi</h2>
+        <div id="add-balance-user-info" style="margin-bottom:1rem;"></div>
+        <form id="add-balance-form" onsubmit="addUserBalance(event)">
+            <input type="hidden" id="add-balance-user-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-list"></i> Aina ya Ongezo
+            </label>
+            <select id="add-balance-type" class="input-field" required onchange="updateBalanceDescription()">
+                <option value="">-- Chagua Aina --</option>
+                <option value="bonus">🎁 Bonasi (Bonus)</option>
+                <option value="award">🏆 Tuzo (Award)</option>
+                <option value="lunch">🍽️ Chakula cha Mchana (Lunch)</option>
+                <option value="dinner">🍲 Chakula cha Jioni (Dinner)</option>
+                <option value="breakfast">🥐 Kifungua Kinywa (Breakfast)</option>
+                <option value="referral_bonus">🤝 Bonasi ya Ushirika</option>
+                <option value="refund">💵 Marejesho (Refund)</option>
+                <option value="other">📌 Nyingine (Other)</option>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-money-bill-wave"></i> Kiasi (TZS)
+            </label>
+            <input type="number" id="add-balance-amount" class="input-field" placeholder="Weka kiasi" min="1" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-align-left"></i> Maelezo
+            </label>
+            <textarea id="add-balance-description" class="input-field" placeholder="Maelezo ya malipo haya..." rows="2" required></textarea>
+            
+            <div id="add-balance-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            <div id="add-balance-success" style="color:var(--accent-solar);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(0,230,118,0.1);border-radius:6px;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;" id="add-balance-submit-btn">
+                <i class="fas fa-plus-circle"></i> Ongeza Salio
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- System Settings Page -->
+<section id="system-config-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-cogs"></i> Mipangilio ya Mfumo</h2>
+    
+    <!-- General Settings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-sliders-h"></i> Mipangilio Mkuu
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-building"></i> Jina la Kampuni
+                </label>
+                <input type="text" id="sys-company-name" class="input-field" 
+                       placeholder="SunWealth Investment Ltd" value="SunWealth Investment Ltd">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-globe"></i> Tovuti (Website)
+                </label>
+                <input type="url" id="sys-website" class="input-field" 
+                       placeholder="https://sunwealth.co.tz">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-envelope"></i> Barua Pepe ya Kampuni
+                </label>
+                <input type="email" id="sys-email" class="input-field" 
+                       placeholder="info@sunwealth.co.tz">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-phone"></i> Simu ya Kampuni
+                </label>
+                <input type="text" id="sys-phone" class="input-field" 
+                       placeholder="+255 700 000 000">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-map-marker-alt"></i> Anwani
+                </label>
+                <input type="text" id="sys-address" class="input-field" 
+                       placeholder="Dar es Salaam, Tanzania">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-language"></i> Lugha
+                </label>
+                <select id="sys-language" class="input-field">
+                    <option value="sw">Kiswahili</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Financial Settings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-money-bill-wave"></i> Mipangilio ya Fedha
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-percentage"></i> Ada ya Utoaji (%)
+                </label>
+                <input type="number" id="sys-withdrawal-fee" class="input-field" 
+                       value="10" min="0" max="100">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-coins"></i> Kiwango cha Chini cha Amana (TZS)
+                </label>
+                <input type="number" id="sys-min-deposit" class="input-field" 
+                       value="7000" min="1000">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-hand-holding-usd"></i> Kiwango cha Chini cha Utoaji (TZS)
+                </label>
+                <input type="number" id="sys-min-withdrawal" class="input-field" 
+                       value="2000" min="1000">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-upload"></i> Kiwango cha Juu cha Utoaji (TZS)
+                </label>
+                <input type="number" id="sys-max-withdrawal" class="input-field" 
+                       value="5000000" min="10000" placeholder="0 = Hakuna kikomo">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-gift"></i> Bonasi ya Ushirika (%)
+                </label>
+                <input type="number" id="sys-referral-bonus" class="input-field" 
+                       value="10" min="0" max="100">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-calendar-check"></i> Muda wa Bonasi (Siku)
+                </label>
+                <input type="number" id="sys-bonus-duration" class="input-field" 
+                       value="30" min="1">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Operating Hours -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-clock"></i> Saa za Kufanya Kazi
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-door-open"></i> Saa ya Kuanza (Utoaji)
+                </label>
+                <input type="time" id="sys-open-time" class="input-field" value="04:30">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-door-closed"></i> Saa ya Kufunga (Utoaji)
+                </label>
+                <input type="time" id="sys-close-time" class="input-field" value="19:00">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-calendar-day"></i> Siku za Kazi
+                </label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;">
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-mon" checked> Jumatatu</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-tue" checked> Jumanne</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-wed" checked> Jumatano</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-thu" checked> Alhamisi</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-fri" checked> Ijumaa</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-sat"> Jumamosi</label>
+                    <label class="checkbox-label"><input type="checkbox" id="sys-day-sun"> Jumapili</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Investment Packages Settings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-solar-panel"></i> Mipangilio ya Vifurushi
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-calendar-alt"></i> Muda wa Vifurushi Vyote (Siku)
+                </label>
+                <input type="number" id="sys-package-duration" class="input-field" 
+                       value="47" min="1">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-percentage"></i> Riba ya Kila Siku (%)
+                </label>
+                <input type="number" id="sys-daily-interest" class="input-field" 
+                       value="4.29" min="0.1" step="0.01">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-check-circle"></i> Ruhusu Ununuzi wa Vifurushi
+                </label>
+                <select id="sys-allow-purchases" class="input-field">
+                    <option value="yes">✅ Ndiyo</option>
+                    <option value="no">❌ Hapana</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-shopping-cart"></i> Idadi ya Juu ya Vifurushi kwa Mtu
+                </label>
+                <input type="number" id="sys-max-packages" class="input-field" 
+                       value="10" min="1" placeholder="0 = Hakuna kikomo">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Security Settings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-shield-alt"></i> Mipangilio ya Usalama
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-key"></i> Urefu wa Chini wa Nywila
+                </label>
+                <input type="number" id="sys-min-password" class="input-field" 
+                       value="6" min="4" max="20">
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-user-lock"></i> Ruhusu Usajili
+                </label>
+                <select id="sys-allow-signup" class="input-field">
+                    <option value="yes">✅ Ndiyo</option>
+                    <option value="no">❌ Hapana</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-sign-in-alt"></i> Ruhusu Kuingia
+                </label>
+                <select id="sys-allow-login" class="input-field">
+                    <option value="yes">✅ Ndiyo</option>
+                    <option value="no">❌ Hapana</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-clock"></i> Muda wa Kukaa Kimya (Dakika)
+                </label>
+                <input type="number" id="sys-session-timeout" class="input-field" 
+                       value="60" min="5" placeholder="Dakika kabla ya kutoka kiotomatiki">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Settings -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-bell"></i> Mipangilio ya Taarifa
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-envelope-open-text"></i> Arifa za Barua Pepe
+                </label>
+                <select id="sys-email-notifications" class="input-field">
+                    <option value="yes">✅ Washa</option>
+                    <option value="no">❌ Zima</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-sms"></i> Arifa za SMS
+                </label>
+                <select id="sys-sms-notifications" class="input-field">
+                    <option value="yes">✅ Washa</option>
+                    <option value="no">❌ Zima</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Maintenance Mode -->
+    <div class="card" style="margin-bottom:1.5rem;">
+        <h3 style="margin-bottom:1rem;border-bottom:1px solid var(--border-subtle);padding-bottom:0.5rem;">
+            <i class="fas fa-tools"></i> Hali ya Matengenezo
+        </h3>
+        
+        <div class="grid-2" style="gap:1rem;">
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-power-off"></i> Hali ya Mfumo
+                </label>
+                <select id="sys-maintenance-mode" class="input-field">
+                    <option value="off">✅ Mtandaoni (Online)</option>
+                    <option value="on">🔧 Matengenezo (Maintenance)</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem;color:var(--text-secondary);">
+                    <i class="fas fa-align-left"></i> Ujumbe wa Matengenezo
+                </label>
+                <textarea id="sys-maintenance-message" class="input-field" rows="3" 
+                          placeholder="Tunaendelea na matengenezo. Tafadhali rudi baadaye.">Mfumo unafanyiwa matengenezo. Tafadhali rudi baadaye. Asante kwa uvumilivu wako.</textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Save Button -->
+    <button class="btn btn-primary" onclick="saveAllSystemSettings()" style="width:100%;padding:0.8rem;margin-bottom:1rem;">
+        <i class="fas fa-save"></i> Hifadhi Mipangilio Yote
+    </button>
+    
+    <!-- Reset Button -->
+    <button class="btn btn-danger" onclick="resetSystemSettings()" style="width:100%;">
+        <i class="fas fa-undo"></i> Rejesha Mipangilio ya Awali
+    </button>
+</section>
+
+<!-- Super Admin Dashboard Section -->
+<section id="super-dashboard-section" class="page-section" style="display:none;">
+    <h2><i class="fas fa-crown"></i> Msimamizi Mkuu - Dashboard</h2>
+    
+    <!-- Platform Overview Stats -->
+    <div class="grid-3" style="margin-bottom:1.5rem;">
+        <div class="card metric-card" style="border-left:3px solid var(--accent-solar);">
+            <div class="metric-label"><i class="fas fa-users"></i> Jumla ya Wateja</div>
+            <div class="metric-value" id="super-total-users">0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid #9b59b6;">
+            <div class="metric-label"><i class="fas fa-shield-alt"></i> Wasimamizi</div>
+            <div class="metric-value" style="color:#9b59b6;" id="super-total-admins">0</div>
+        </div>
+        <div class="card metric-card" style="border-left:3px solid var(--accent-warning);">
+            <div class="metric-label"><i class="fas fa-clock"></i> Zinasubiri</div>
+            <div class="metric-value" style="color:var(--accent-warning);" id="super-pending-count">0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-coins"></i> Jumla ya Amana</div>
+            <div class="metric-value" style="color:var(--accent-solar);" id="super-total-deposits">TZS 0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-upload"></i> Jumla ya Utoaji</div>
+            <div class="metric-value" style="color:var(--accent-warning);" id="super-total-withdrawals">TZS 0</div>
+        </div>
+        <div class="card metric-card">
+            <div class="metric-label"><i class="fas fa-chart-line"></i> Uwekezaji Hai</div>
+            <div class="metric-value" style="color:var(--accent-info);" id="super-active-investments">0</div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="flex-row" style="gap:0.8rem;margin-bottom:1.5rem;">
+        <button class="btn btn-primary" onclick="navigateTo('pending-approvals')" style="flex:1;padding:0.8rem;">
+            <i class="fas fa-clock"></i> Maombi Yanayosubiri
+        </button>
+        <button class="btn btn-info" onclick="navigateTo('all-transactions')" style="flex:1;padding:0.8rem;">
+            <i class="fas fa-list"></i> Historia ya Miramala
+        </button>
+        <button class="btn btn-warning" onclick="navigateTo('system-config')" style="flex:1;padding:0.8rem;">
+            <i class="fas fa-cogs"></i> Mipangilio
+        </button>
+    </div>
+    
+    <!-- Admin Management Section -->
+    <h3><i class="fas fa-shield-alt"></i> Usimamizi wa Wasimamizi</h3>
+    
+    <div class="flex-row" style="margin-bottom:1rem;gap:0.5rem;">
+        <button class="btn btn-primary" onclick="showAddAdminModal()">
+            <i class="fas fa-plus"></i> Ongeza Msimamizi
+        </button>
+        <button class="btn btn-info" onclick="refreshSuperAdminAdmins()">
+            <i class="fas fa-sync"></i> Refresh
+        </button>
+    </div>
+    
+    <!-- Admins Table -->
+    <div class="card" id="super-admin-list" style="overflow-x:auto;">
+        <p style="color:var(--text-secondary);text-align:center;padding:2rem;">
+            <i class="fas fa-spinner fa-spin"></i> Inapakia wasimamizi...
+        </p>
+    </div>
+</section>
+
+<!-- Add Admin Modal -->
+<div id="add-admin-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('add-admin-modal')">&times;</span>
+        <h2 id="add-admin-modal-title"><i class="fas fa-user-plus"></i> Ongeza Msimamizi</h2>
+        <form id="add-admin-form" onsubmit="saveAdmin(event)">
+            <input type="hidden" id="add-admin-edit-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-user"></i> Jina la Mtumiaji *
+            </label>
+            <input type="text" id="add-admin-username" class="input-field" 
+                   placeholder="Username" minlength="3" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-envelope"></i> Barua Pepe *
+            </label>
+            <input type="email" id="add-admin-email" class="input-field" 
+                   placeholder="Email" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-phone"></i> Namba ya Simu
+            </label>
+            <input type="text" id="add-admin-phone" class="input-field" 
+                   placeholder="Phone">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-lock"></i> Nywila *
+            </label>
+            <input type="password" id="add-admin-password" class="input-field" 
+                   placeholder="Angalau herufi 6" minlength="6">
+            <small style="color:var(--text-secondary);font-size:0.75rem;display:block;margin-top:-0.5rem;margin-bottom:0.5rem;">
+                <i class="fas fa-info-circle"></i> Acha wazi kama unahariri bila kubadilisha nywila
+            </small>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-shield-alt"></i> Wadhifa *
+            </label>
+            <select id="add-admin-role" class="input-field" required>
+                <option value="admin">🛡️ Msimamizi (Admin)</option>
+                <option value="superadmin">👑 Msimamizi Mkuu (Super Admin)</option>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-toggle-on"></i> Hali
+            </label>
+            <select id="add-admin-status" class="input-field" required>
+                <option value="active">✅ Hai (Active)</option>
+                <option value="inactive">❌ Imezuiliwa (Inactive)</option>
+            </select>
+            
+            <div id="add-admin-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;" id="add-admin-submit-btn">
+                <i class="fas fa-save"></i> Hifadhi
+            </button>
+        </form>
+    </div>
+</div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav" style="display:none;">
+        <a href="#" class="bottom-nav-item active" data-page="home" onclick="navigateTo('home')">
+            <i class="fas fa-home"></i><span>Home</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="packages" onclick="navigateTo('packages')">
+            <i class="fas fa-solar-panel"></i><span>Packages</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="wallet" onclick="navigateTo('wallet')">
+            <i class="fas fa-wallet"></i><span>Wallet</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="profile" onclick="navigateTo('profile')">
+    <i class="fas fa-user-circle"></i><span>Profile</span>
+</a>
+        <a href="#" class="bottom-nav-item" data-page="transactions" onclick="navigateTo('transactions')">
+            <i class="fas fa-history"></i><span>History</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="referral" onclick="navigateTo('referral')">
+            <i class="fas fa-users"></i><span>Referral</span>
+        </a>
+    </nav>
+
+    <!-- Admin Bottom Nav -->
+    <nav class="bottom-nav" id="bottom-nav-admin" style="display:none;">
+        <a href="#" class="bottom-nav-item active" data-page="admin-dashboard" onclick="navigateTo('admin-dashboard')">
+            <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="pending-approvals" onclick="navigateTo('pending-approvals')">
+            <i class="fas fa-clock"></i><span>Approvals</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="all-transactions" onclick="navigateTo('all-transactions')">
+            <i class="fas fa-list"></i><span>Transactions</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="user-management" onclick="navigateTo('user-management')">
+            <i class="fas fa-users"></i><span>Users</span>
+        </a>
+    </nav>
+
+    <!-- Super Admin Bottom Nav -->
+    <nav class="bottom-nav" id="bottom-nav-superadmin" style="display:none;">
+        <a href="#" class="bottom-nav-item active" data-page="super-dashboard" onclick="navigateTo('super-dashboard')">
+            <i class="fas fa-tachometer-alt"></i><span>Overview</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="pending-approvals" onclick="navigateTo('pending-approvals')">
+            <i class="fas fa-clock"></i><span>Approvals</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="all-transactions" onclick="navigateTo('all-transactions')">
+            <i class="fas fa-list"></i><span>History</span>
+        </a>
+        <a href="#" class="bottom-nav-item" data-page="system-config" onclick="navigateTo('system-config')">
+            <i class="fas fa-cogs"></i><span>Settings</span>
+        </a>
+    </nav>
+
+<!-- Login Modal -->
+<div id="login-modal" class="modal">
+    <div class="modal-content card" style="max-width:450px;">
+        <span class="close" onclick="closeModal('login-modal')">&times;</span>
+        <h2>🔐 Ingia (Login)</h2>
+        
+        <form id="login-form" onsubmit="handleLogin(event)">
+            
+            <!-- Login Identifier (Username, Email, or Phone) -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                Jina la Mtumiaji / Barua Pepe / Simu
+            </label>
+            <input type="text" id="login-identifier" class="input-field" 
+                   placeholder="Username, Email, au Namba ya Simu" required autocomplete="username">
+            
+            <!-- Password -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">Nywila (Password)</label>
+            <div style="position:relative;">
+                <input type="password" id="login-password" class="input-field" 
+                       placeholder="Andika nywila yako" required autocomplete="current-password"
+                       style="padding-right:45px;">
+                <button type="button" onclick="togglePasswordVisibility('login-password', this)" 
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;padding:5px;">
+                    👁️
+                </button>
+            </div>
+            
+            <!-- Remember Me -->
+            <div style="margin:0.8rem 0;display:flex;justify-content:space-between;align-items:center;">
+                <label class="checkbox-label" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+                    <input type="checkbox" id="login-remember" style="accent-color:var(--accent-solar);">
+                    <span style="font-size:0.85rem;">Nikumbuke (Remember Me)</span>
+                </label>
+                <a href="#" onclick="closeModal('login-modal');showResetPasswordModal();" 
+                   style="font-size:0.85rem;color:var(--accent-info);text-decoration:none;">
+                    Umesahau Nywila?
+                </a>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="login-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" style="width:100%;padding:0.8rem;" id="login-submit-btn">
+                🔐 Ingia (Login)
+            </button>
+            
+            <!-- Signup Link -->
+            <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--text-secondary);">
+                Huna akaunti? 
+                <a href="#" onclick="closeModal('login-modal');showSignupModal();" 
+                   style="color:var(--accent-solar);font-weight:600;">
+                    Jisajili Hapa (Sign Up)
+                </a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div id="reset-password-modal" class="modal">
+    <div class="modal-content card" style="max-width:450px;">
+        <span class="close" onclick="closeModal('reset-password-modal')">&times;</span>
+        <h2>🔑 Umesahau Nywila?</h2>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1rem;">
+            Weka barua pepe yako na tutakutumia kiungo cha kubadilisha nywila.
+        </p>
+        <form onsubmit="handleResetPassword(event)">
+            <input type="email" id="reset-email" class="input-field" placeholder="Barua pepe yako (Email)" required>
+            <div id="reset-message" style="display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;border-radius:6px;"></div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">📧 Tuma Kiungo (Send Link)</button>
+            <p style="text-align:center;margin-top:1rem;">
+                <a href="#" onclick="closeModal('reset-password-modal');showLoginModal();" 
+                   style="color:var(--accent-info);font-size:0.85rem;">← Rudi kwenye Login</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- Signup Modal -->
+<div id="signup-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('signup-modal')">&times;</span>
+        <h2><i class="fas fa-user-plus"></i> Jisajili (Sign Up)</h2>
+        
+        <!-- Referral Banner -->
+        <div id="referral-banner" style="display:none;background:rgba(0,230,118,0.1);border:1px solid var(--accent-solar);border-radius:8px;padding:0.8rem;margin-bottom:1rem;text-align:center;">
+            <p style="color:var(--accent-solar);font-size:0.9rem;margin:0;">
+                <i class="fas fa-gift"></i> <strong>Umealikwa na mshiriki!</strong><br>
+                <span style="font-size:0.8rem;">Namba ya ushirika imejazwa kiotomatiki</span>
+            </p>
+        </div>
+        
+        <form id="signup-form" onsubmit="handleSignup(event)">
+            
+            <!-- Username -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-user"></i> Jina la Mtumiaji (Username) *
+            </label>
+            <input type="text" id="signup-username" class="input-field" 
+                   placeholder="Mfano: juma123" minlength="3" required autocomplete="username">
+            <small style="color:var(--text-secondary);font-size:0.75rem;display:block;margin-top:-0.5rem;margin-bottom:0.5rem;">
+                <i class="fas fa-info-circle"></i> Angalau herufi 3. Herufi ndogo, namba, na _ pekee.
+            </small>
+            
+            <!-- Email -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-envelope"></i> Barua Pepe (Email) *
+            </label>
+            <input type="email" id="signup-email" class="input-field" 
+                   placeholder="Mfano: juma@gmail.com" required autocomplete="email">
+            
+            <!-- Phone -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-phone"></i> Namba ya Simu (Phone)
+            </label>
+            <div style="display:flex;gap:0.5rem;">
+                <select id="signup-country-code" class="input-field" style="width:110px;flex-shrink:0;">
+                    <option value="+255">+255 (TZ)</option>
+                    <option value="+254">+254 (KE)</option>
+                    <option value="+256">+256 (UG)</option>
+                    <option value="+250">+250 (RW)</option>
+                    <option value="+257">+257 (BI)</option>
+                </select>
+                <input type="tel" id="signup-phone" class="input-field" 
+                       placeholder="712 345 678" style="flex:1;" autocomplete="tel">
+            </div>
+            
+            <!-- Referral Code -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-users"></i> Namba ya Ushirika (Referral Code)
+            </label>
+            <input type="text" id="signup-referral" class="input-field" 
+                   placeholder="Acha wazi kama huna (Optional)" 
+                   style="background:rgba(0,230,118,0.05);">
+            <small id="referral-note" style="color:var(--accent-solar);display:none;margin-top:-0.5rem;margin-bottom:0.5rem;font-size:0.8rem;">
+                <i class="fas fa-check-circle"></i> Umealikwa na mshiriki! Namba ya ushirika imejazwa kiotomatiki.
+            </small>
+            
+            <!-- Password -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-lock"></i> Nywila (Password) *
+            </label>
+            <div style="position:relative;">
+                <input type="password" id="signup-password" class="input-field" 
+                       placeholder="Angalau herufi 6" minlength="6" required autocomplete="new-password"
+                       style="padding-right:45px;">
+                <button type="button" onclick="togglePasswordVisibility('signup-password', this)" 
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1rem;padding:5px;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            
+            <!-- Confirm Password -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-lock"></i> Thibitisha Nywila (Confirm Password) *
+            </label>
+            <div style="position:relative;">
+                <input type="password" id="signup-confirm-password" class="input-field" 
+                       placeholder="Andika nywila tena" minlength="6" required autocomplete="new-password"
+                       style="padding-right:45px;">
+                <button type="button" onclick="togglePasswordVisibility('signup-confirm-password', this)" 
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1rem;padding:5px;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            
+            <!-- Terms Checkbox -->
+            <div style="margin:0.8rem 0;">
+                <label class="checkbox-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;">
+                    <input type="checkbox" id="signup-terms" required style="margin-top:3px;accent-color:var(--accent-solar);">
+                    <span style="font-size:0.85rem;">
+                        Ninakubali 
+                        <a href="#" onclick="event.preventDefault();showTermsModal();" style="color:var(--accent-info);text-decoration:underline;">
+                            Masharti na Vigezo
+                        </a> 
+                        vya SunWealth Investment Ltd
+                    </span>
+                </label>
+            </div>
+            
+            <!-- Error Message -->
+            <div id="signup-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <!-- Success Message -->
+            <div id="signup-success" style="color:var(--accent-solar);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(0,230,118,0.1);border-radius:6px;"></div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" style="width:100%;padding:0.8rem;" id="signup-submit-btn">
+                <i class="fas fa-user-plus"></i> Fungua Akaunti
+            </button>
+            
+            <!-- Login Link -->
+            <p style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--text-secondary);">
+                Tayari una akaunti? 
+                <a href="#" onclick="closeModal('signup-modal');showLoginModal();" style="color:var(--accent-solar);font-weight:600;">
+                    <i class="fas fa-sign-in-alt"></i> Ingia Hapa
+                </a>
+            </p>
+        </form>
+    </div>
+</div> 
+
+<!-- Terms and Conditions Modal -->
+<div id="terms-modal" class="modal">
+    <div class="modal-content card" style="max-width:600px;max-height:80vh;overflow-y:auto;">
+        <span class="close" onclick="closeModal('terms-modal')">&times;</span>
+        <h2>📜 Masharti na Vigezo</h2>
+        <div style="font-size:0.9rem;color:var(--text-secondary);line-height:1.8;">
+            <h3 style="color:var(--text-primary);">1. Utangulizi</h3>
+            <p>Karibu katika SunWealth Investment Ltd. Kwa kujisajili na kutumia huduma zetu, unakubali masharti yafuatayo.</p>
+            
+            <h3 style="color:var(--text-primary);">2. Amana (Deposits)</h3>
+            <p>Amana zote zitashughulikiwa ndani ya saa 24. Kiwango cha chini cha amana ni TZS 7,000.</p>
+            
+            <h3 style="color:var(--text-primary);">3. Utoaji (Withdrawals)</h3>
+            <p>Utoaji unaruhusiwa kati ya saa 10:30 asubuhi na saa 1:00 usiku (04:30 AM - 07:00 PM). Ada ya utoaji ni 10%.</p>
+            
+            <h3 style="color:var(--text-primary);">4. Uwekezaji</h3>
+            <p>Mapato yanahesabiwa kila siku kulingana na kifurushi ulichochagua. Vifurushi vyote vina muda wa siku 47.</p>
+            
+            <h3 style="color:var(--text-primary);">5. Programu ya Ushirika</h3>
+            <p>Unapata 10% ya amana ya kwanza ya kila mtu unayemwalika kujiunga na SunWealth.</p>
+            
+            <h3 style="color:var(--text-primary);">6. Usalama</h3>
+            <p>Tunahifadhi taarifa zako kwa usalama. Usishiriki nywila yako na mtu yeyote.</p>
+        </div>
+        <button class="btn btn-primary" onclick="closeModal('terms-modal')" style="width:100%;margin-top:1rem;">Nimeelewa</button>
+    </div>
+</div>
+    
+<!-- Deposit Modal with Stepper -->
+<div id="deposit-modal" class="modal">
+    <div class="modal-content card" style="max-width:600px;">
+        <span class="close" onclick="closeModal('deposit-modal')">&times;</span>
+        <h2>📥 Make Deposit</h2>
+        
+        <!-- Step Progress Indicators -->
+        <div class="stepper-indicators">
+            <div class="step-indicator active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">Select Bank</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">Your Details</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">Send Payment</div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step-indicator" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">Confirm</div>
+            </div>
+        </div>
+        
+        <!-- Step 1: Select Bank Account -->
+        <div class="step-content" id="deposit-step-1">
+            <h3 style="margin-bottom:0.5rem;">Step 1: Choose Payment Method</h3>
+            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem;">Select where you'll send your payment:</p>
+            <div id="bank-selector-list" style="max-height:280px;overflow-y:auto;">
+                <p style="color:var(--text-secondary);text-align:center;padding:1rem;">
+                    <span class="loading-spinner"></span> Loading payment methods...
+                </p>
+            </div>
+            <button class="btn btn-primary" onclick="depositGoToStep(2)" style="width:100%;margin-top:1rem;" id="deposit-step1-next" disabled>
+                Next Step → 
+            </button>
+        </div>
+        
+        <!-- Step 2: Your Details -->
+        <div class="step-content" id="deposit-step-2" style="display:none;">
+            <h3 style="margin-bottom:0.5rem;">Step 2: Your Information</h3>
+            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem;">Fill in your details for this deposit:</p>
+            <form onsubmit="depositGoToStep(3);return false;">
+                <label style="font-size:0.85rem;color:var(--text-secondary);">Full Name</label>
+                <input type="text" id="deposit-fullname" class="input-field" placeholder="Enter your full name" required>
+                
+                <label style="font-size:0.85rem;color:var(--text-secondary);">Phone Number</label>
+                <input type="tel" id="deposit-phone" class="input-field" placeholder="e.g., +255 712 345 678" required>
+                
+                <label style="font-size:0.85rem;color:var(--text-secondary);">Amount to Deposit (TZS)</label>
+                <input type="number" id="deposit-amount-new" class="input-field" placeholder="Minimum TZS 7,000" min="7000" required>
+                
+                <div class="flex-row" style="gap:0.5rem;margin-top:0.5rem;">
+                    <button type="button" class="btn" onclick="depositGoToStep(1)" style="flex:1;">← Back</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">Next Step →</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Step 3: Send Payment Instructions -->
+        <div class="step-content" id="deposit-step-3" style="display:none;">
+            <h3 style="margin-bottom:0.5rem;">Step 3: Send Your Payment</h3>
+            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem;">Send the exact amount to the account below:</p>
+            
+            <div class="card" style="background:linear-gradient(135deg, #0a2f1f, #0b1c2a);border:1px solid var(--accent-solar);margin-bottom:1rem;">
+                <div style="text-align:center;margin-bottom:0.8rem;">
+                    <span style="font-size:2.5rem;" id="deposit-bank-icon">📱</span>
+                </div>
+                <div id="deposit-instructions-content" style="font-size:0.9rem;">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+            
+            <div class="card" style="background:rgba(255,167,38,0.1);border:1px solid var(--accent-warning);">
+                <p style="font-size:0.85rem;color:var(--accent-warning);">
+                    ⚠️ <strong>Important:</strong> Save your transaction reference/ID after sending payment. You'll need it in the next step.
+                </p>
+            </div>
+            
+            <div class="flex-row" style="gap:0.5rem;margin-top:1rem;">
+                <button type="button" class="btn" onclick="depositGoToStep(2)" style="flex:1;">← Back</button>
+                <button type="button" class="btn btn-primary" onclick="depositGoToStep(4)" style="flex:1;">
+                    I've Sent Payment →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Confirmation -->
+        <div class="step-content" id="deposit-step-4" style="display:none;">
+            <h3 style="margin-bottom:0.5rem;">Step 4: Confirm Your Deposit</h3>
+            <p style="color:var(--text-secondary);margin-bottom:1rem;font-size:0.9rem;">Review and submit your deposit confirmation:</p>
+            
+            <div class="card" style="background:rgba(33,150,243,0.05);border:1px solid var(--accent-info);margin-bottom:1rem;">
+                <table style="width:100%;font-size:0.85rem;">
+                    <tr><td style="color:var(--text-secondary);padding:0.3rem 0;">👤 Name:</td><td><strong id="confirm-deposit-name">-</strong></td></tr>
+                    <tr><td style="color:var(--text-secondary);padding:0.3rem 0;">📱 Phone:</td><td><strong id="confirm-deposit-phone">-</strong></td></tr>
+                    <tr><td style="color:var(--text-secondary);padding:0.3rem 0;">🏦 Bank:</td><td><strong id="confirm-deposit-bank">-</strong></td></tr>
+                    <tr><td style="color:var(--text-secondary);padding:0.3rem 0;">💵 Amount:</td><td><strong style="color:var(--accent-solar);font-size:1.1rem;" id="confirm-deposit-amount">-</strong></td></tr>
+                </table>
+            </div>
+            
+            <form onsubmit="submitStepperDeposit(event)">
+                <label style="font-size:0.85rem;color:var(--text-secondary);">Transaction Reference / ID *</label>
+                <input type="text" id="deposit-reference-code" class="input-field" placeholder="Enter the transaction reference from your payment" required>
+                
+                <div id="deposit-stepper-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;"></div>
+                
+                <div class="flex-row" style="gap:0.5rem;margin-top:0.5rem;">
+                    <button type="button" class="btn" onclick="depositGoToStep(3)" style="flex:1;">← Back</button>
+                    <button type="submit" class="btn btn-primary" style="flex:1;">✅ Confirm Deposit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div id="withdraw-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('withdraw-modal')">&times;</span>
+        <h2><i class="fas fa-upload"></i> Toa Pesa (Withdraw)</h2>
+        
+        <!-- Balance Display -->
+        <div class="card" style="background:linear-gradient(135deg, rgba(0,230,118,0.05), rgba(33,150,243,0.05));border:1px solid var(--accent-solar);text-align:center;margin-bottom:1rem;">
+            <div style="font-size:0.8rem;color:var(--text-secondary);">Salio Linalopatikana</div>
+            <div style="font-size:1.5rem;font-weight:700;color:var(--accent-solar);" id="withdraw-available-balance">TZS 0</div>
+        </div>
+        
+        <form id="withdraw-form" onsubmit="handleWithdraw(event)">
+            
+            <!-- Withdrawal Method -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-university"></i> Njia ya Kupokea (Withdrawal Method) *
+            </label>
+            <select id="withdraw-method" class="input-field" required onchange="updateWithdrawPlaceholder()">
+                <option value="">-- Chagua Njia ya Kupokea --</option>
+                
+                <optgroup label="📱 Mitandao ya Simu Tanzania">
+                    <option value="mpesa">M-Pesa (Vodacom)</option>
+                    <option value="tigopesa">Tigo Pesa (Tigo)</option>
+                    <option value="airtel_money">Airtel Money (Airtel)</option>
+                    <option value="halopesa">HaloPesa (Halotel)</option>
+                    <option value="ezypesa">EzyPesa (Zantel)</option>
+                    <option value="ttcl_pesa">TTCL Pesa (TTCL)</option>
+                </optgroup>
+                
+                <optgroup label="🏛️ Benki Tanzania">
+                    <option value="crdb">CRDB Bank</option>
+                    <option value="nmb">NMB Bank</option>
+                    <option value="exim">Exim Bank</option>
+                    <option value="stanbic">Stanbic Bank</option>
+                    <option value="kcb">KCB Bank</option>
+                    <option value="absa">ABSA Bank (Barclays)</option>
+                    <option value="dtb">Diamond Trust Bank (DTB)</option>
+                    <option value="equity">Equity Bank</option>
+                    <option value="posta">Tanzania Postal Bank (TPB)</option>
+                    <option value="maendeleo">Maendeleo Bank</option>
+                    <option value="mkombozi">Mkombozi Bank</option>
+                    <option value="access">Access Bank</option>
+                    <option value="dcb">DCB Commercial Bank</option>
+                </optgroup>
+                
+                <optgroup label="₿ Fedha za Kidijitali">
+                    <option value="usdt_trc20">USDT (TRC-20)</option>
+                    <option value="usdt_erc20">USDT (ERC-20)</option>
+                    <option value="btc">Bitcoin (BTC)</option>
+                    <option value="eth">Ethereum (ETH)</option>
+                </optgroup>
+            </select>
+            
+            <!-- Account Number / Phone -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-phone"></i> Namba ya Simu / Akaunti *
+            </label>
+            <input type="text" id="withdraw-account" class="input-field" 
+                   placeholder="Mfano: 0712 345 678 au 0123456789" required>
+            
+            <!-- Account Holder Name -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-user"></i> Jina la Mmiliki wa Akaunti *
+            </label>
+            <input type="text" id="withdraw-account-name" class="input-field" 
+                   placeholder="Jina kamili kama lilivyo kwenye akaunti" required>
+            
+            <!-- Amount -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-money-bill-wave"></i> Kiasi cha Kutoa (Amount) *
+            </label>
+            <input type="number" id="withdraw-amount" class="input-field" 
+                   placeholder="Kiwango cha chini TZS 2,000" min="2000" required 
+                   oninput="calculateWithdrawFee()">
+            
+            <!-- Fee Display -->
+            <div id="withdraw-fee-display" style="display:none;background:rgba(255,167,38,0.1);border:1px solid var(--accent-warning);border-radius:8px;padding:0.8rem;margin:0.5rem 0;">
+                <table style="width:100%;font-size:0.85rem;">
+                    <tr>
+                        <td style="color:var(--text-secondary);">Kiasi Unachotoa:</td>
+                        <td style="text-align:right;font-weight:600;" id="fee-gross-amount">TZS 0</td>
+                    </tr>
+                    <tr>
+                        <td style="color:var(--text-secondary);">Ada ya Utoaji (10%):</td>
+                        <td style="text-align:right;font-weight:600;color:var(--danger);" id="fee-amount">TZS 0</td>
+                    </tr>
+                    <tr style="border-top:1px solid var(--border-subtle);">
+                        <td style="font-weight:600;">Utakachopokea:</td>
+                        <td style="text-align:right;font-weight:700;color:var(--accent-solar);" id="fee-net-amount">TZS 0</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Password Confirmation -->
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-lock"></i> Nywila ya Uthibitisho *
+            </label>
+            <div style="position:relative;">
+                <input type="password" id="withdraw-password" class="input-field" 
+                       placeholder="Andika nywila yako kuthibitisha" required
+                       style="padding-right:45px;">
+                <button type="button" onclick="togglePasswordVisibility('withdraw-password', this)" 
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1rem;padding:5px;">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            
+            <!-- Operating Hours Info -->
+            <div style="background:rgba(33,150,243,0.05);border:1px solid var(--accent-info);border-radius:8px;padding:0.8rem;margin:0.8rem 0;font-size:0.8rem;color:var(--text-secondary);">
+                <i class="fas fa-clock"></i> <strong>Saa za Utoaji:</strong> 04:30 AM - 07:00 PM<br>
+                <i class="fas fa-exclamation-circle"></i> Ada ya utoaji ni <strong>10%</strong> ya kiasi unachotoa
+            </div>
+            
+            <!-- Error Message -->
+            <div id="withdraw-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-warning" style="width:100%;padding:0.8rem;" id="withdraw-submit-btn">
+                <i class="fas fa-paper-plane"></i> Tuma Ombi la Utoaji
+            </button>
+        </form>
+    </div>
+</div>
+    
+    <!-- Buy Package Confirmation Modal -->
+<div id="buy-confirm-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('buy-confirm-modal')">&times;</span>
+        <h2>🛒 Thibitisha Ununuzi</h2>
+        
+        <!-- Package Details -->
+        <div class="card" style="background:linear-gradient(135deg, #0a2f1f, #0b1c2a);border:1px solid var(--accent-solar);margin-bottom:1rem;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">☀️</div>
+            <h3 style="color:var(--accent-solar);margin-bottom:0.3rem;" id="confirm-package-name">SunWealth A</h3>
+            <div style="font-size:0.9rem;color:var(--text-secondary);">Kifurushi cha Uwekezaji</div>
+        </div>
+        
+        <!-- Investment Details Table -->
+        <div class="card" style="margin-bottom:1rem;">
+            <table style="width:100%;font-size:0.9rem;">
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.5rem 0;">💰 Kiasi cha Kuwekeza:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-solar);" id="confirm-invest-amount">TZS 0</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.5rem 0;">📈 Mapato ya Kila Siku:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-solar);" id="confirm-daily-income">TZS 0</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.5rem 0;">🏆 Jumla ya Mapato:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-solar);" id="confirm-total-income">TZS 0</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.5rem 0;">📅 Muda wa Mkataba:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-info);" id="confirm-validity">Siku 47</td>
+                </tr>
+                <tr style="border-top:1px solid var(--border-subtle);">
+                    <td style="color:var(--text-secondary);padding:0.8rem 0;font-weight:600;">💵 Salio Lako Sasa:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-info);" id="confirm-current-balance">TZS 0</td>
+                </tr>
+                <tr style="border-top:1px solid var(--border-subtle);">
+                    <td style="color:var(--text-secondary);padding:0.8rem 0;font-weight:600;">💳 Salio Baada ya Ununuzi:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-warning);" id="confirm-remaining-balance">TZS 0</td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- Insufficient Balance Warning -->
+        <div id="confirm-insufficient-warning" style="display:none;background:rgba(248,81,73,0.1);border:1px solid var(--danger);border-radius:8px;padding:0.8rem;margin-bottom:1rem;text-align:center;">
+            <p style="color:var(--danger);font-size:0.9rem;margin:0;">
+                ⚠️ <strong>Salio halitoshi!</strong><br>
+                <span style="font-size:0.85rem;">Tafadhali weka amana kwanza kabla ya kununua kifurushi.</span>
+            </p>
+            <button class="btn btn-primary btn-sm" onclick="closeModal('buy-confirm-modal');showDepositModal();" style="margin-top:0.5rem;">
+                📥 Weka Amana Sasa
+            </button>
+        </div>
+        
+        <!-- Error Message -->
+        <div id="buy-confirm-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+        
+        <!-- Success Message -->
+        <div id="buy-confirm-success" style="color:var(--accent-solar);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(0,230,118,0.1);border-radius:6px;"></div>
+        
+        <!-- Action Buttons -->
+        <div class="flex-row" style="gap:0.5rem;">
+            <button class="btn" onclick="closeModal('buy-confirm-modal')" style="flex:1;">
+                ❌ Ghairi (Cancel)
+            </button>
+            <button class="btn btn-primary" onclick="confirmBuyPackage()" style="flex:1;padding:0.8rem;" id="buy-confirm-submit-btn">
+                ✅ Thibitisha Ununuzi
+            </button>
+        </div>
+        
+        <p style="text-align:center;margin-top:0.8rem;font-size:0.8rem;color:var(--text-secondary);">
+            Kwa kununua kifurushi, unakubali masharti ya SunWealth Investment Ltd.
+        </p>
+    </div>
+</div>
+
+<!-- Purchase Success Modal -->
+<div id="purchase-success-modal" class="modal">
+    <div class="modal-content card" style="max-width:450px;text-align:center;">
+        <span class="close" onclick="closeModal('purchase-success-modal')">&times;</span>
+        <div style="font-size:4rem;margin-bottom:1rem;">🎉</div>
+        <h2 style="color:var(--accent-solar);">Hongera!</h2>
+        <p style="font-size:1.1rem;margin-bottom:0.5rem;">Umefanikiwa kununua</p>
+        <h3 style="color:var(--accent-solar);margin-bottom:1rem;" id="success-package-name">SunWealth A</h3>
+        
+        <div class="card" style="background:rgba(0,230,118,0.05);border:1px solid var(--accent-solar);margin-bottom:1rem;">
+            <table style="width:100%;font-size:0.9rem;">
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.3rem 0;">💰 Kiasi:</td>
+                    <td style="text-align:right;font-weight:700;" id="success-amount">TZS 0</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.3rem 0;">📈 Mapato ya Siku:</td>
+                    <td style="text-align:right;font-weight:700;color:var(--accent-solar);" id="success-daily">TZS 0</td>
+                </tr>
+                <tr>
+                    <td style="color:var(--text-secondary);padding:0.3rem 0;">📅 Muda:</td>
+                    <td style="text-align:right;font-weight:700;" id="success-days">Siku 47</td>
+                </tr>
+            </table>
+        </div>
+        
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:1rem;">
+            Mapato yataanza kuhesabiwa mara moja!
+        </p>
+        
+        <div class="flex-row" style="gap:0.5rem;">
+            <button class="btn" onclick="closeModal('purchase-success-modal');navigateTo('investments');" style="flex:1;">
+                📊 Anga Uwekezaji
+            </button>
+            <button class="btn btn-primary" onclick="closeModal('purchase-success-modal');" style="flex:1;">
+                ✅ Sawa
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Social Link Modal (Admin) -->
+<div id="social-link-modal" class="modal">
+    <div class="modal-content card" style="max-width:500px;">
+        <span class="close" onclick="closeModal('social-link-modal')">&times;</span>
+        <h2 id="social-link-modal-title">
+            <i class="fas fa-plus-circle"></i> Add Social Link
+        </h2>
+        <form id="social-link-form" onsubmit="saveSocialLink(event)">
+            <input type="hidden" id="social-link-edit-id">
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-tag"></i> Title *
+            </label>
+            <input type="text" id="social-link-title" class="input-field" 
+                   placeholder="Mfano: Jiunge na WhatsApp Group" required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-align-left"></i> Description
+            </label>
+            <textarea id="social-link-description" class="input-field" 
+                      placeholder="Maelezo mafupi..." rows="2"></textarea>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-link"></i> URL *
+            </label>
+            <input type="url" id="social-link-url" class="input-field" 
+                   placeholder="https://..." required>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-list"></i> Type *
+            </label>
+            <select id="social-link-type" class="input-field" required onchange="updateSocialIcon()">
+                <option value="">-- Select Type --</option>
+                <optgroup label="📱 Social Media">
+                    <option value="whatsapp">WhatsApp</option>
+                    <option value="telegram">Telegram</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="twitter">Twitter (X)</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="linkedin">LinkedIn</option>
+                </optgroup>
+                <optgroup label="📞 Communication">
+                    <option value="phone">Phone Call</option>
+                    <option value="sms">SMS</option>
+                    <option value="email">Email</option>
+                </optgroup>
+                <optgroup label="🌐 Other">
+                    <option value="website">Website</option>
+                    <option value="discord">Discord</option>
+                    <option value="other">Other</option>
+                </optgroup>
+            </select>
+            
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-icons"></i> Icon Class (FontAwesome)
+            </label>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                <input type="text" id="social-link-icon" class="input-field" 
+                       placeholder="fab fa-whatsapp" required style="flex:1;">
+                <span id="social-icon-preview" style="font-size:1.5rem;min-width:40px;text-align:center;">
+                    <i class="fas fa-question-circle"></i>
+                </span>
+            </div>
+            
+            <label class="checkbox-label">
+                <input type="checkbox" id="social-link-active" checked>
+                Active (Visible to users)
+            </label>
+            
+            <div id="social-link-error" style="color:var(--danger);display:none;margin-bottom:0.5rem;font-size:0.85rem;padding:0.5rem;background:rgba(248,81,73,0.1);border-radius:6px;"></div>
+            
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                <i class="fas fa-save"></i> Save Social Link
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Social Verification Popup Modal -->
+<div id="social-verify-modal" class="modal">
+    <div class="modal-content card" style="max-width:520px;animation:bounceIn 0.4s ease;">
+        <span class="close" onclick="skipSocialVerification()">&times;</span>
+        
+        <div style="text-align:center;margin-bottom:1rem;">
+            <div style="font-size:3rem;color:var(--accent-solar);margin-bottom:0.5rem;">
+                <i class="fas fa-share-alt"></i>
+            </div>
+            <h2 style="color:var(--accent-solar);">Ungana Nasi!</h2>
+            <p style="color:var(--text-secondary);font-size:0.9rem;">
+                Fuata mitandao yetu upate taarifa za haraka na ofa maalum!
+            </p>
+        </div>
+        
+        <!-- Social Links List -->
+        <div id="social-popup-list" style="max-height:350px;overflow-y:auto;">
+            <p style="text-align:center;color:var(--text-secondary);padding:1rem;">
+                <i class="fas fa-spinner fa-spin"></i> Inapakia...
+            </p>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div style="margin:1rem 0;">
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.3rem;">
+                <span>Maendeleo</span>
+                <span id="social-progress-text">0/0 Imethibitishwa</span>
+            </div>
+            <div class="progress-bar" style="height:6px;">
+                <div class="progress-fill" id="social-progress-fill" style="width:0%;background:var(--accent-solar);"></div>
+            </div>
+        </div>
+        
+        <!-- Skip Button -->
+        <div style="text-align:center;">
+            <button class="btn" onclick="skipSocialVerification()" style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-forward"></i> Ruka Kwa Sasa
+            </button>
+        </div>
+    </div>
+</div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="main.js"></script>
+</body>
+</html>
