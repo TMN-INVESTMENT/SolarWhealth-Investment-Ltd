@@ -69,6 +69,12 @@
             <a href="#" class="sidebar-link" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
+            <!-- Add at the bottom of sidebar -->
+<div class="sidebar-footer" style="padding:1rem 1.2rem;border-top:1px solid var(--border-subtle);margin-top:auto;">
+    <button onclick="toggleLanguage()" style="width:100%;padding:0.5rem;background:var(--bg-deep);border:1px solid var(--border-subtle);border-radius:6px;color:var(--text-primary);cursor:pointer;font-weight:500;">
+        <i class="fas fa-globe"></i> <span id="sidebar-lang-label">English</span>
+    </button>
+</div>
         </nav>
         
         <!-- Admin Navigation -->
@@ -135,15 +141,21 @@
                     <span>☀️</span> SunWealth
                 </div>
             </div>
-            <div class="header-right">
-                <div class="auth-buttons" id="auth-buttons">
-                    <button class="btn btn-sm" onclick="showLoginModal()">Login</button>
-                    <button class="btn btn-primary btn-sm" onclick="showSignupModal()">Sign Up</button>
-                </div>
-                <div class="user-info" id="user-info" style="display:none;">
-                    <span class="user-greeting" id="user-display-name"></span>
-                </div>
-            </div>
+<!-- In the header right section -->
+<div class="header-right">
+    <!-- Add this language toggle button -->
+    <button id="lang-toggle" class="btn btn-sm" onclick="toggleLanguage()" style="background:transparent;border-color:var(--border-subtle);min-width:70px;">
+        <i class="fas fa-globe"></i> <span id="lang-label">EN</span>
+    </button>
+    
+    <div class="auth-buttons" id="auth-buttons">
+        <button class="btn btn-sm" onclick="showLoginModal()">Login</button>
+        <button class="btn btn-primary btn-sm" onclick="showSignupModal()">Sign Up</button>
+    </div>
+    <div class="user-info" id="user-info" style="display:none;">
+        <span class="user-greeting" id="user-display-name"></span>
+    </div>
+</div>
         </header>
 
 
@@ -154,8 +166,9 @@
 <section id="home-section" class="page-section">
         <!-- Hero Section -->
     <div class="hero">
-        <h1>Invest in Solar Energy with <span>SunWealth</span></h1>
-        <p class="subtitle">Earn daily income from high-tech solar farms. Start with just TZS 7,000.</p>
+       <!-- Hero Section -->
+<h1 data-i18n="hero_title">Invest in Solar Energy with <span>SunWealth</span></h1>
+<p class="subtitle" data-i18n="hero_subtitle">Earn daily income from high-tech solar farms. Start with just TZS 7,000.</p>
     </div>
     <div class="slideshow-container" id="home-slideshow">
         <div class="slides-wrapper" id="slides-wrapper">
@@ -185,12 +198,9 @@
 
     
     <!-- Investment Packages Grid -->
-    <h2 class="section-title">💰 Investment Packages</h2>
-    <div class="package-grid" id="package-grid"></div>
-    
-    <!-- Global Activity Log -->
-    <h2 class="section-title">🌍 Live Activity</h2>
-    <div class="activity-log card" id="activity-log"></div>
+<!-- Section Titles -->
+<h2 class="section-title" data-i18n="investment_packages">💰 Investment Packages</h2>
+<h2 class="section-title" data-i18n="live_activity">🌍 Live Activity</h2>
 </section>
 
             <!-- Packages Page -->
@@ -1341,6 +1351,10 @@
         <a href="#" class="bottom-nav-item" data-page="referral" onclick="navigateTo('referral')">
             <i class="fas fa-users"></i><span>Referral</span>
         </a>
+        <!-- Add to bottom-nav-user, bottom-nav-admin, bottom-nav-superadmin -->
+<a href="#" class="bottom-nav-item" onclick="toggleLanguage()" style="font-size:0.65rem;">
+    <i class="fas fa-globe"></i><span id="bottom-lang-label">EN</span>
+</a>
     </nav>
 
     <!-- Admin Bottom Nav -->
@@ -1379,34 +1393,47 @@
 <div id="login-modal" class="modal">
     <div class="modal-content card" style="max-width:450px;">
         <span class="close" onclick="closeModal('login-modal')">&times;</span>
-        <h2>🔐 Ingia (Login)</h2>
+        <h2 style="text-align:center;"><i class="fas fa-sign-in-alt"></i> Ingia (Login)</h2>
         
         <form id="login-form" onsubmit="handleLogin(event)">
             
-            <!-- Login Identifier (Username, Email, or Phone) -->
+            <!-- Phone Number with Auto +255 -->
             <label style="font-size:0.85rem;color:var(--text-secondary);">
-                Jina la Mtumiaji / Barua Pepe / Simu
+                <i class="fas fa-phone"></i> Namba ya Simu
             </label>
-            <input type="text" id="login-identifier" class="input-field" 
-                   placeholder="Username, Email, au Namba ya Simu" required autocomplete="username">
+            <div style="display:flex;gap:0.5rem;">
+                <div style="position:relative;width:110px;flex-shrink:0;">
+                    <input type="text" id="login-country-code" class="input-field" 
+                           value="+255" readonly 
+                           style="background:rgba(0,230,118,0.08);border:1px solid var(--accent-solar);color:var(--accent-solar);font-weight:600;text-align:center;cursor:default;padding-right:10px;">
+                </div>
+                <input type="tel" id="login-identifier" class="input-field" 
+                       placeholder="712 345 678" required style="flex:1;" autocomplete="tel"
+                       oninput="formatPhoneInput(this)">
+            </div>
+            <small style="color:var(--text-secondary);font-size:0.75rem;display:block;margin-top:-0.5rem;margin-bottom:0.8rem;">
+                <i class="fas fa-info-circle"></i> Ingia kwa kutumia namba yako ya simu
+            </small>
             
             <!-- Password -->
-            <label style="font-size:0.85rem;color:var(--text-secondary);">Nywila (Password)</label>
+            <label style="font-size:0.85rem;color:var(--text-secondary);">
+                <i class="fas fa-lock"></i> Nywila (Password)
+            </label>
             <div style="position:relative;">
                 <input type="password" id="login-password" class="input-field" 
                        placeholder="Andika nywila yako" required autocomplete="current-password"
                        style="padding-right:45px;">
                 <button type="button" onclick="togglePasswordVisibility('login-password', this)" 
-                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1.1rem;padding:5px;">
-                    👁️
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:1rem;padding:5px;">
+                    <i class="fas fa-eye"></i>
                 </button>
             </div>
             
-            <!-- Remember Me -->
+            <!-- Remember Me & Forgot Password -->
             <div style="margin:0.8rem 0;display:flex;justify-content:space-between;align-items:center;">
                 <label class="checkbox-label" style="cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
                     <input type="checkbox" id="login-remember" style="accent-color:var(--accent-solar);">
-                    <span style="font-size:0.85rem;">Nikumbuke (Remember Me)</span>
+                    <span style="font-size:0.85rem;">Nikumbuke</span>
                 </label>
                 <a href="#" onclick="closeModal('login-modal');showResetPasswordModal();" 
                    style="font-size:0.85rem;color:var(--accent-info);text-decoration:none;">
@@ -1419,7 +1446,7 @@
             
             <!-- Submit Button -->
             <button type="submit" class="btn btn-primary" style="width:100%;padding:0.8rem;" id="login-submit-btn">
-                🔐 Ingia (Login)
+                <i class="fas fa-sign-in-alt"></i> Ingia (Login)
             </button>
             
             <!-- Signup Link -->
@@ -1427,7 +1454,7 @@
                 Huna akaunti? 
                 <a href="#" onclick="closeModal('login-modal');showSignupModal();" 
                    style="color:var(--accent-solar);font-weight:600;">
-                    Jisajili Hapa (Sign Up)
+                    <i class="fas fa-user-plus"></i> Jisajili Hapa
                 </a>
             </p>
         </form>
@@ -1456,40 +1483,22 @@
 
 <!-- Signup Modal -->
 <div id="signup-modal" class="modal">
-    <div class="modal-content card" style="max-width:500px;">
+    <div class="modal-content card" style="max-width:480px;">
         <span class="close" onclick="closeModal('signup-modal')">&times;</span>
-        <h2><i class="fas fa-user-plus"></i> Jisajili (Sign Up)</h2>
+        <h2 style="text-align:center;"><i class="fas fa-user-plus"></i> Jisajili (Sign Up)</h2>
         
         <!-- Referral Banner -->
         <div id="referral-banner" style="display:none;background:rgba(0,230,118,0.1);border:1px solid var(--accent-solar);border-radius:8px;padding:0.8rem;margin-bottom:1rem;text-align:center;">
             <p style="color:var(--accent-solar);font-size:0.9rem;margin:0;">
-                <i class="fas fa-gift"></i> <strong>Umealikwa na mshiriki!</strong><br>
-                <span style="font-size:0.8rem;">Namba ya ushirika imejazwa kiotomatiki</span>
+                <i class="fas fa-gift"></i> <strong>Umealikwa na mshiriki!</strong>
             </p>
         </div>
         
         <form id="signup-form" onsubmit="handleSignup(event)">
             
-            <!-- Username -->
+            <!-- Phone Number -->
             <label style="font-size:0.85rem;color:var(--text-secondary);">
-                <i class="fas fa-user"></i> Jina la Mtumiaji (Username) *
-            </label>
-            <input type="text" id="signup-username" class="input-field" 
-                   placeholder="Mfano: juma123" minlength="3" required autocomplete="username">
-            <small style="color:var(--text-secondary);font-size:0.75rem;display:block;margin-top:-0.5rem;margin-bottom:0.5rem;">
-                <i class="fas fa-info-circle"></i> Angalau herufi 3. Herufi ndogo, namba, na _ pekee.
-            </small>
-            
-            <!-- Email -->
-            <label style="font-size:0.85rem;color:var(--text-secondary);">
-                <i class="fas fa-envelope"></i> Barua Pepe (Email) *
-            </label>
-            <input type="email" id="signup-email" class="input-field" 
-                   placeholder="Mfano: juma@gmail.com" required autocomplete="email">
-            
-            <!-- Phone -->
-            <label style="font-size:0.85rem;color:var(--text-secondary);">
-                <i class="fas fa-phone"></i> Namba ya Simu (Phone)
+                <i class="fas fa-phone"></i> Namba ya Simu *
             </label>
             <div style="display:flex;gap:0.5rem;">
                 <select id="signup-country-code" class="input-field" style="width:110px;flex-shrink:0;">
@@ -1500,18 +1509,17 @@
                     <option value="+257">+257 (BI)</option>
                 </select>
                 <input type="tel" id="signup-phone" class="input-field" 
-                       placeholder="712 345 678" style="flex:1;" autocomplete="tel">
+                       placeholder="712 345 678" required style="flex:1;" autocomplete="tel">
             </div>
             
-            <!-- Referral Code -->
-            <label style="font-size:0.85rem;color:var(--text-secondary);">
-                <i class="fas fa-users"></i> Namba ya Ushirika (Referral Code)
+            <!-- Referral Code - BLACK AND WHITE STYLE -->
+            <label style="font-size:0.85rem;color:#888;">
+                <i class="fas fa-users" style="color:#888;"></i> Namba ya Ushirika (Referral Code)
             </label>
-            <input type="text" id="signup-referral" class="input-field" 
-                   placeholder="Acha wazi kama huna (Optional)" 
-                   style="background:rgba(0,230,118,0.05);">
-            <small id="referral-note" style="color:var(--accent-solar);display:none;margin-top:-0.5rem;margin-bottom:0.5rem;font-size:0.8rem;">
-                <i class="fas fa-check-circle"></i> Umealikwa na mshiriki! Namba ya ushirika imejazwa kiotomatiki.
+            <input type="text" id="signup-referral" class="input-field referral-input-bw" 
+                   placeholder="Acha wazi kama huna (Optional)">
+            <small id="referral-note" style="color:#aaa;display:none;font-size:0.8rem;margin-top:-0.5rem;margin-bottom:0.5rem;">
+                <i class="fas fa-check-circle"></i> Umealikwa! Namba imejazwa kiotomatiki.
             </small>
             
             <!-- Password -->
@@ -1530,7 +1538,7 @@
             
             <!-- Confirm Password -->
             <label style="font-size:0.85rem;color:var(--text-secondary);">
-                <i class="fas fa-lock"></i> Thibitisha Nywila (Confirm Password) *
+                <i class="fas fa-check-circle"></i> Thibitisha Nywila (Confirm Password) *
             </label>
             <div style="position:relative;">
                 <input type="password" id="signup-confirm-password" class="input-field" 
@@ -1543,11 +1551,11 @@
             </div>
             
             <!-- Terms Checkbox -->
-            <div style="margin:0.8rem 0;">
+            <div style="margin:1rem 0;">
                 <label class="checkbox-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;">
-                    <input type="checkbox" id="signup-terms" required style="margin-top:3px;accent-color:var(--accent-solar);">
+                    <input type="checkbox" id="signup-terms" required style="margin-top:3px;accent-color:var(--accent-solar);min-width:16px;">
                     <span style="font-size:0.85rem;">
-                        Ninakubali 
+                        Nimekubali 
                         <a href="#" onclick="event.preventDefault();showTermsModal();" style="color:var(--accent-info);text-decoration:underline;">
                             Masharti na Vigezo
                         </a> 
@@ -1576,7 +1584,7 @@
             </p>
         </form>
     </div>
-</div> 
+</div>
 
 <!-- Terms and Conditions Modal -->
 <div id="terms-modal" class="modal">

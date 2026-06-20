@@ -1795,3 +1795,57 @@ tr:hover td {
         font-size: 0.7rem;
     }
 }
+
+/* Login country code styling */
+#login-country-code {
+    background: rgba(0, 230, 118, 0.08) !important;
+    border: 1px solid var(--accent-solar) !important;
+    color: var(--accent-solar) !important;
+    font-weight: 600;
+    text-align: center;
+    cursor: default;
+    user-select: none;
+}
+
+/* Phone input styling */
+#login-identifier {
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+}
+
+#login-identifier::placeholder {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ===== BLACK & WHITE REFERRAL INPUT ===== */
+.referral-input-bw {
+    background: #1a1a1a !important;
+    border: 1px solid #444 !important;
+    color: #ccc !important;
+    transition: all 0.3s ease;
+}
+
+.referral-input-bw:focus {
+    border-color: #888 !important;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.1);
+    outline: none;
+}
+
+.referral-input-bw::placeholder {
+    color: #666 !important;
+    font-style: italic;
+}
+
+/* Read-only state (when referral from URL) */
+.referral-input-bw[readonly] {
+    background: #222 !important;
+    border: 1px solid #555 !important;
+    color: #aaa !important;
+    cursor: not-allowed;
+}
+
+/* Hover effect */
+.referral-input-bw:hover:not([readonly]) {
+    border-color: #666 !important;
+}

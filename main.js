@@ -210,6 +210,26 @@ function generateId(prefix) {
     return (prefix || '') + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 }
 
+// ===== LANGUAGE SYSTEM INTEGRATION =====
+// Load language system
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof initLanguage === 'function') {
+        initLanguage();
+    }
+});
+
+// Override showToast to use translated messages
+const originalShowToast = showToast;
+showToast = function(message, type) {
+    if (typeof translate === 'function') {
+        // Try to translate the message
+        const translated = translate(message);
+        originalShowToast(translated, type);
+    } else {
+        originalShowToast(message, type);
+    }
+};
+
 // ===== NAVIGATION =====
 function navigateTo(page) {
     // Hide all sections
@@ -723,10 +743,63 @@ function updateUIForLoggedOut() {
 function showLoginModal() { openModal('login-modal'); }
 function showSignupModal() { openModal('signup-modal'); }
 
+// Format phone input - remove non-digits
+function formatPhoneInput(input) {
+    // Remove any non-digit characters except +
+    var value = input.value.replace(/[^\d+]/g, '');
+    
+    // If user types 0 first, replace with nothing (they should type 7xx)
+    if (value.length === 1 && value === '0') {
+        value = '';
+    }
+    
+    // Remove leading + if user types it (we already have +255)
+    if (value.startsWith('+')) {
+        value = value.substring(1);
+    }
+    
+    // Limit to 9 digits (Tanzania number without country code)
+    if (value.length > 9) {
+        value = value.substring(0, 9);
+    }
+    
+    input.value = value;
+}
+
+// Show login modal
+function showLoginModal() {
+    // Clear form and errors
+    var form = document.getElementById('login-form');
+    var err = document.getElementById('login-error');
+    if (form) form.reset();
+    if (err) err.style.display = 'none';
+    
+    // Reset country code to +255
+    var countryCode = document.getElementById('login-country-code');
+    if (countryCode) countryCode.value = '+255';
+    
+    // Reset button
+    var submitBtn = document.getElementById('login-submit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
+    }
+    
+    openModal('login-modal');
+    
+    // Focus on phone input
+    setTimeout(function() {
+        var phoneInput = document.getElementById('login-identifier');
+        if (phoneInput) phoneInput.focus();
+    }, 300);
+}
+
+// Handle login
 function handleLogin(event) {
     event.preventDefault();
     
-    var identifier = document.getElementById('login-identifier').value.trim();
+    var countryCode = document.getElementById('login-country-code').value;
+    var phoneNumber = document.getElementById('login-identifier').value.trim();
     var password = document.getElementById('login-password').value;
     var rememberMe = document.getElementById('login-remember').checked;
     var err = document.getElementById('login-error');
@@ -734,8 +807,13 @@ function handleLogin(event) {
     
     if (err) err.style.display = 'none';
     
-    if (!identifier) {
-        showLoginError('<i class="fas fa-exclamation-triangle"></i> Tafadhali jaza jina, barua pepe, au namba ya simu.');
+    // Build full phone number
+    var fullPhone = countryCode + phoneNumber.replace(/^0+/, '');
+    fullPhone = fullPhone.replace(/[\s\-\(\)]/g, '');
+    
+    // Validate
+    if (!phoneNumber || phoneNumber.length < 9) {
+        showLoginError('<i class="fas fa-exclamation-triangle"></i> Tafadhali jaza namba ya simu sahihi (tarakimu 9)');
         return;
     }
     if (!password) {
@@ -748,39 +826,12 @@ function handleLogin(event) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inaingia...';
     }
     
-    // If it's an email, try direct login
-    if (identifier.includes('@')) {
-        performLoginWithSocial(identifier, password, rememberMe, submitBtn, err);
-        return;
-    }
+    console.log('📱 Logging in with phone:', fullPhone);
     
-    // Otherwise search for user first
-    findUserByIdentifier(identifier)
-        .then(function(userData) {
-            if (!userData || !userData.email) {
-                showLoginError('<i class="fas fa-exclamation-triangle"></i> Mteja hajapatikana. Angalia taarifa zako au tumia barua pepe.');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia';
-                }
-                return Promise.reject('not_found');
-            }
-            return performLoginWithSocial(userData.email, password, rememberMe, submitBtn, err);
-        })
-        .catch(function(error) {
-            if (error === 'not_found') return;
-            if (error === 'login_failed') return;
-            
-            console.error('Login error:', error);
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia';
-            }
-            showLoginError('<i class="fas fa-exclamation-triangle"></i> Imeshindwa kuingia. Jaribu tena.');
-        });
-}
-
-function performLoginWithSocial(email, password, rememberMe, submitBtn, errDiv) {
+    // Convert phone to email format for Firebase Auth
+    var email = fullPhone.replace(/\+/g, '') + '@sunwealth.user';
+    
+    // Set persistence
     var persistence = rememberMe ?
         firebase.auth.Auth.Persistence.LOCAL :
         firebase.auth.Auth.Persistence.SESSION;
@@ -793,25 +844,34 @@ function performLoginWithSocial(email, password, rememberMe, submitBtn, errDiv) 
             console.log('✅ Login successful');
             
             closeModal('login-modal');
+            showToast('<i class="fas fa-check-circle"></i> Karibu tena!', 'success');
             
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia';
+                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
             }
             
-            var form = document.getElementById('login-form');
-            if (form) form.reset();
+            // Reset form
+            document.getElementById('login-form').reset();
+            var countryCode = document.getElementById('login-country-code');
+            if (countryCode) countryCode.value = '+255';
             
-            showToast('<i class="fas fa-check-circle"></i> Karibu tena! Umefanikiwa kuingia.', 'success');
-            
-            // Note: Social popup will be started by loadUserData in onAuthStateChanged
+            // Log activity
+            if (currentUserData) {
+                db.collection('activity_logs').add({
+                    message: fullPhone + ' ameingia kwenye mfumo',
+                    type: 'login',
+                    phone: fullPhone,
+                    created_at: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(function(e) { console.warn('Login log skipped'); });
+            }
         })
         .catch(function(error) {
-            console.error('❌ Login failed:', error.code);
+            console.error('❌ Login error:', error.code);
             
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia';
+                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
             }
             
             var msg = getLoginErrorMessage(error.code);
@@ -819,217 +879,6 @@ function performLoginWithSocial(email, password, rememberMe, submitBtn, errDiv) 
         });
 }
 
-// Direct login with email
-function tryDirectLogin(email, password, rememberMe, submitBtn, errDiv) {
-    var persistence = rememberMe ?
-        firebase.auth.Auth.Persistence.LOCAL :
-        firebase.auth.Auth.Persistence.SESSION;
-    
-    return auth.setPersistence(persistence).then(function() {
-            return auth.signInWithEmailAndPassword(email, password);
-        })
-        .then(function() {
-            closeModal('login-modal');
-            showToast('👋 Karibu! Umefanikiwa kuingia.', 'success');
-            
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '🔐 Ingia (Login)';
-            }
-            
-            document.getElementById('login-form').reset();
-        })
-        .catch(function(error) {
-            console.error('Direct login error:', error.code);
-            
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '🔐 Ingia (Login)';
-            }
-            
-            showLoginError(getLoginErrorMessage(error.code));
-            return Promise.reject('login_failed');
-        });
-}
-
-// Find user by identifier (username, email, or phone)
-function findUserByIdentifier(identifier) {
-    identifier = identifier.toLowerCase().trim();
-    
-    // Check if it's an email
-    if (identifier.includes('@')) {
-        console.log('🔍 Searching by email:', identifier);
-        return findUserByEmail(identifier);
-    }
-    
-    // Check if it looks like a phone number
-    if (/^\+?\d{9,}$/.test(identifier.replace(/[\s-]/g, ''))) {
-        var cleanPhone = identifier.replace(/[\s-]/g, '');
-        console.log('🔍 Searching by phone:', cleanPhone);
-        return findUserByPhone(cleanPhone);
-    }
-    
-    // Default: search by username
-    console.log('🔍 Searching by username:', identifier);
-    return findUserByUsername(identifier);
-}
-
-// Find user by email - WITH BETTER ERROR HANDLING
-function findUserByEmail(email) {
-    return db.collection('users')
-        .where('email', '==', email)
-        .limit(1)
-        .get()
-        .then(function(snap) {
-            if (snap.empty) {
-                console.log('❌ No user found with email:', email);
-                return null;
-            }
-            var userData = snap.docs[0].data();
-            console.log('✅ User found by email:', userData.email);
-            return userData;
-        })
-        .catch(function(e) {
-            console.error('Email search error:', e.code, e.message);
-            
-            // If permission denied, try getting all users and filter manually
-            if (e.code === 'permission-denied') {
-                console.log('🔄 Falling back to manual search...');
-                return manualUserSearch('email', email);
-            }
-            return null;
-        });
-}
-
-// Find user by username - WITH BETTER ERROR HANDLING
-function findUserByUsername(username) {
-    return db.collection('users')
-        .where('username', '==', username)
-        .limit(1)
-        .get()
-        .then(function(snap) {
-            if (snap.empty) {
-                console.log('❌ No user found with username:', username);
-                return null;
-            }
-            var userData = snap.docs[0].data();
-            console.log('✅ User found by username:', userData.username);
-            return userData;
-        })
-        .catch(function(e) {
-            console.error('Username search error:', e.code, e.message);
-            
-            // Fallback to manual search
-            if (e.code === 'permission-denied') {
-                console.log('🔄 Falling back to manual search...');
-                return manualUserSearch('username', username);
-            }
-            return null;
-        });
-}
-
-// Find user by phone - WITH BETTER ERROR HANDLING
-function findUserByPhone(phone) {
-    return db.collection('users')
-        .where('phone', '==', phone)
-        .limit(1)
-        .get()
-        .then(function(snap) {
-            if (!snap.empty) {
-                var userData = snap.docs[0].data();
-                console.log('✅ User found by phone:', userData.phone);
-                return userData;
-            }
-            
-            // Try variations
-            var variations = [
-                phone,
-                '0' + phone.replace(/^\+?\d{3}/, ''),
-                '+255' + phone.replace(/^\+?0?/, '')
-            ];
-            
-            return tryPhoneVariations(variations, 1);
-        })
-        .catch(function(e) {
-            console.error('Phone search error:', e.code, e.message);
-            
-            // Fallback to manual search
-            if (e.code === 'permission-denied') {
-                console.log('🔄 Falling back to manual search...');
-                return manualUserSearch('phone', phone);
-            }
-            return null;
-        });
-}
-
-// Try phone variations
-function tryPhoneVariations(variations, index) {
-    if (index >= variations.length) return null;
-    
-    var phone = variations[index];
-    
-    return db.collection('users')
-        .where('phone', '==', phone)
-        .limit(1)
-        .get()
-        .then(function(snap) {
-            if (!snap.empty) {
-                var userData = snap.docs[0].data();
-                console.log('✅ User found by phone variation:', phone);
-                return userData;
-            }
-            return tryPhoneVariations(variations, index + 1);
-        })
-        .catch(function() {
-            return tryPhoneVariations(variations, index + 1);
-        });
-}
-
-// MANUAL SEARCH - Get all users and filter in JavaScript
-function manualUserSearch(field, value) {
-    console.log('📋 Performing manual search for', field, '=', value);
-    
-    return db.collection('users').get()
-        .then(function(snap) {
-            if (snap.empty) {
-                console.log('❌ No users in database');
-                return null;
-            }
-            
-            var foundUser = null;
-            
-            snap.forEach(function(doc) {
-                var userData = doc.data();
-                
-                if (field === 'email' && userData.email === value) {
-                    foundUser = userData;
-                } else if (field === 'username' && userData.username === value) {
-                    foundUser = userData;
-                } else if (field === 'phone' && userData.phone === value) {
-                    foundUser = userData;
-                } else if (field === 'phone' && userData.phone) {
-                    // Try matching last 9 digits
-                    var userPhoneClean = userData.phone.replace(/[\s\-\+]/g, '');
-                    var searchPhoneClean = value.replace(/[\s\-\+]/g, '');
-                    if (userPhoneClean.slice(-9) === searchPhoneClean.slice(-9)) {
-                        foundUser = userData;
-                    }
-                }
-            });
-            
-            if (foundUser) {
-                console.log('✅ User found via manual search:', foundUser.email);
-            } else {
-                console.log('❌ User not found via manual search');
-            }
-            
-            return foundUser;
-        })
-        .catch(function(e) {
-            console.error('Manual search error:', e);
-            return null;
-        });
-}
 // Show login error
 function showLoginError(message) {
     var err = document.getElementById('login-error');
@@ -1041,28 +890,7 @@ function showLoginError(message) {
     }
     if (submitBtn) {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia';
-    }
-    
-    setTimeout(function() {
-        if (err) err.style.display = 'none';
-    }, 8000);
-}
-
-// Show signup error
-function showSignupError(message) {
-    var err = document.getElementById('signup-error');
-    var success = document.getElementById('signup-success');
-    var submitBtn = document.getElementById('signup-submit-btn');
-    
-    if (err) {
-        err.innerHTML = message;
-        err.style.display = 'block';
-    }
-    if (success) success.style.display = 'none';
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
+        submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
     }
     
     setTimeout(function() {
@@ -1073,27 +901,15 @@ function showSignupError(message) {
 // Get login error message
 function getLoginErrorMessage(code) {
     var messages = {
-        'auth/invalid-email': 'Barua pepe siyo sahihi.',
+        'auth/invalid-email': 'Namba ya simu siyo sahihi.',
         'auth/user-disabled': 'Akaunti hii imezuiwa. Wasiliana na msimamizi.',
-        'auth/user-not-found': 'Mteja hajapatikana. Angalia taarifa zako.',
+        'auth/user-not-found': 'Akaunti haipo. Tafadhali jisajili kwanza.',
         'auth/wrong-password': 'Nywila siyo sahihi. Tafadhali jaribu tena.',
-        'auth/invalid-credential': 'Taarifa za kuingia siyo sahihi.',
-        'auth/too-many-requests': 'Umejaribu mara nyingi. Subiri kidogo.',
-        'auth/network-request-failed': 'Mtandao haupatikani. Angalia intaneti.'
+        'auth/invalid-credential': 'Namba ya simu au nywila siyo sahihi.',
+        'auth/too-many-requests': 'Umejaribu mara nyingi. Subiri kidogo ujaribu tena.',
+        'auth/network-request-failed': 'Mtandao haupatikani. Angalia intaneti yako.'
     };
     return messages[code] || 'Imeshindwa kuingia. Jaribu tena baadaye.';
-}
-
-// Get Firebase error message
-function getFirebaseErrorMessage(code) {
-    var messages = {
-        'auth/email-already-in-use': '<i class="fas fa-exclamation-circle"></i> Barua pepe hii tayari imesajiliwa.',
-        'auth/invalid-email': '<i class="fas fa-exclamation-circle"></i> Barua pepe siyo sahihi.',
-        'auth/weak-password': '<i class="fas fa-exclamation-circle"></i> Nywila ni dhaifu. Tumia angalau herufi 6.',
-        'auth/network-request-failed': '<i class="fas fa-exclamation-circle"></i> Mtandao haupatikani.',
-        'auth/too-many-requests': '<i class="fas fa-exclamation-circle"></i> Umejaribu mara nyingi. Subiri.'
-    };
-    return messages[code] || '<i class="fas fa-exclamation-circle"></i> Imeshindwa: ' + (code || 'Jaribu tena.');
 }
 
 // Toggle password visibility
@@ -1101,10 +917,10 @@ function togglePasswordVisibility(inputId, button) {
     var input = document.getElementById(inputId);
     if (input.type === 'password') {
         input.type = 'text';
-        button.textContent = '🙈';
+        button.innerHTML = '<i class="fas fa-eye-slash"></i>';
     } else {
         input.type = 'password';
-        button.textContent = '👁️';
+        button.innerHTML = '<i class="fas fa-eye"></i>';
     }
 }
 
@@ -1191,11 +1007,9 @@ function handleSignup(event) {
     event.preventDefault();
     
     // Get form values
-    var username = document.getElementById('signup-username').value.trim().toLowerCase();
-    var email = document.getElementById('signup-email').value.trim().toLowerCase();
     var countryCode = document.getElementById('signup-country-code').value;
     var phoneNumber = document.getElementById('signup-phone').value.trim();
-    var fullPhone = phoneNumber ? countryCode + phoneNumber.replace(/^0+/, '') : '';
+    var fullPhone = countryCode + phoneNumber.replace(/^0+/, ''); // Remove leading zero
     var referralCode = document.getElementById('signup-referral').value.trim();
     var password = document.getElementById('signup-password').value;
     var confirmPassword = document.getElementById('signup-confirm-password').value;
@@ -1210,26 +1024,29 @@ function handleSignup(event) {
     if (success) success.style.display = 'none';
     
     // ===== VALIDATIONS =====
+    
+    // 1. Terms & Conditions
     if (!termsAccepted) {
         showSignupError('<i class="fas fa-exclamation-triangle"></i> Tafadhali kubali Masharti na Vigezo');
         return;
     }
-    if (!username || username.length < 3) {
-        showSignupError('<i class="fas fa-exclamation-triangle"></i> Jina la mtumiaji linatakiwa liwe na angalau herufi 3');
+    
+    // 2. Phone validation
+    if (!phoneNumber || phoneNumber.length < 9) {
+        showSignupError('<i class="fas fa-exclamation-triangle"></i> Tafadhali jaza namba ya simu sahihi (angalau tarakimu 9)');
         return;
     }
-    if (!/^[a-z0-9_]+$/.test(username)) {
-        showSignupError('<i class="fas fa-exclamation-triangle"></i> Herufi ndogo, namba, na _ pekee');
-        return;
-    }
-    if (!email || !isValidEmail(email)) {
-        showSignupError('<i class="fas fa-exclamation-triangle"></i> Tafadhali jaza barua pepe sahihi');
-        return;
-    }
+    
+    // Clean phone number - remove spaces and dashes
+    fullPhone = fullPhone.replace(/[\s\-\(\)]/g, '');
+    
+    // 3. Password validation
     if (!password || password.length < 6) {
         showSignupError('<i class="fas fa-exclamation-triangle"></i> Nywila inatakiwa iwe na angalau herufi 6');
         return;
     }
+    
+    // 4. Confirm password
     if (password !== confirmPassword) {
         showSignupError('<i class="fas fa-exclamation-triangle"></i> Nywila haziwiani. Tafadhali jaribu tena.');
         return;
@@ -1241,29 +1058,27 @@ function handleSignup(event) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Inasubiri...';
     }
     
-    // Check username uniqueness
-    checkUsernameUnique(username)
+    // 5. Check if phone already registered
+    checkPhoneUnique(fullPhone)
         .then(function(isUnique) {
             if (!isUnique) {
-                showSignupError('<i class="fas fa-exclamation-triangle"></i> Jina la mtumiaji "' + username + '" tayari limeshatumika.');
+                showSignupError('<i class="fas fa-exclamation-triangle"></i> Namba hii ya simu tayari imesajiliwa. Tafadhali ingia au tumia namba nyingine.');
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
                 }
-                return Promise.reject('username_taken');
+                return Promise.reject('phone_taken');
             }
             
-            // Validate referral code if provided
+            // 6. Validate referral code if provided
             if (referralCode) {
                 return validateReferralCode(referralCode);
             }
             return Promise.resolve(null);
         })
         .then(function(referrerData) {
-            // Create user account
-            return createUserAccount({
-                username: username,
-                email: email,
+            // Create user account with phone as username
+            return createPhoneUserAccount({
                 phone: fullPhone,
                 referralCode: referralCode,
                 referrerData: referrerData,
@@ -1271,7 +1086,7 @@ function handleSignup(event) {
             });
         })
         .then(function() {
-            // Success message
+            // Success
             if (success) {
                 success.innerHTML = '<i class="fas fa-check-circle"></i> Akaunti imefunguliwa kwa mafanikio!';
                 success.style.display = 'block';
@@ -1283,41 +1098,17 @@ function handleSignup(event) {
             // Clear referral from storage
             sessionStorage.removeItem('sunwealth_ref');
             
-          // In handleSignup, replace the auto-login section:
-setTimeout(function() {
-    closeModal('signup-modal');
-    
-    // Auto login after signup
-    auth.signInWithEmailAndPassword(email, password)
-        .then(function() {
-            console.log('✅ Auto-login after signup successful');
-            showToast('<i class="fas fa-check-circle"></i> Karibu @' + username + '!', 'success');
-            
-            // Reset button
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
-            }
-            if (success) success.style.display = 'none';
-            
-            // Note: Social popup will be started by loadUserData in onAuthStateChanged
-        })
-        .catch(function(loginError) {
-            console.log('Auto-login failed, showing login modal');
-            showLoginModal();
-            
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
-            }
-            if (success) success.style.display = 'none';
-            
-            showToast('<i class="fas fa-check-circle"></i> Akaunti imefunguliwa! Sasa ingia.', 'success');
-        });
-}, 1500);
+            // Auto-login after signup
+            setTimeout(function() {
+                closeModal('signup-modal');
+                
+                // Auto login with phone
+                performPhoneLogin(fullPhone, password, submitBtn);
+            }, 1500);
         })
         .catch(function(error) {
-            if (error === 'username_taken') return; // Already handled
+            if (error === 'phone_taken') return;
+            if (error === 'invalid_referral') return;
             
             console.error('Signup error:', error);
             
@@ -1328,6 +1119,148 @@ setTimeout(function() {
             
             showSignupError(getFirebaseErrorMessage(error.code || error.message));
         });
+}
+
+// Check if phone number is unique
+function checkPhoneUnique(phone) {
+    return db.collection('users')
+        .where('phone', '==', phone)
+        .get()
+        .then(function(snap) {
+            return snap.empty;
+        })
+        .catch(function(e) {
+            console.warn('Phone check error:', e);
+            return true; // Allow on error
+        });
+}
+
+// Validate referral code
+function validateReferralCode(code) {
+    return db.collection('users')
+        .where('referralCode', '==', code)
+        .get()
+        .then(function(snap) {
+            if (snap.empty) {
+                showSignupError('<i class="fas fa-exclamation-triangle"></i> Namba ya ushirika "' + code + '" haipo. Acha wazi au angalia.');
+                return Promise.reject('invalid_referral');
+            }
+            return snap.docs[0].data();
+        });
+}
+
+// Create user account with phone
+function createPhoneUserAccount(data) {
+    var phone = data.phone;
+    var referralCode = data.referralCode;
+    var referrerData = data.referrerData;
+    var password = data.password;
+    
+    // Create email from phone for Firebase Auth
+    var email = phone.replace(/\+/g, '') + '@sunwealth.user';
+    var username = phone.replace(/\+/g, '');
+    
+    // Create auth user
+    return auth.createUserWithEmailAndPassword(email, password)
+        .then(function(userCredential) {
+            var user = userCredential.user;
+            
+            // Generate referral code
+            var userReferralCode = 'SW' + phone.replace(/\+/g, '').slice(-8);
+            
+            // User data for Firestore
+            var userData = {
+                uid: user.uid,
+                username: username,
+                phone: phone,
+                email: email,
+                referralCode: userReferralCode,
+                referredBy: referralCode || null,
+                referredByValid: referralCode ? true : false,
+                referralBonusPaid: false,
+                referrerId: referrerData ? referrerData.uid : null,
+                referrerName: referrerData ? referrerData.username || referrerData.phone : null,
+                role: 'user',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            // Save to Firestore
+            return db.collection('users').doc(user.uid).set(userData)
+                .then(function() {
+                    // Create wallet
+                    return db.collection('wallets').doc(user.uid).set({
+                        user_id: user.uid,
+                        current_balance: 0,
+                        total_deposited: 0,
+                        total_withdrawn: 0,
+                        created_at: firebase.firestore.FieldValue.serverTimestamp(),
+                        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(function() {
+                    // Log activity
+                    var logMsg = phone + ' amejisajili';
+                    if (referralCode && referrerData) {
+                        logMsg += ' kupitia ushirika wa ' + (referrerData.phone || referrerData.username);
+                    }
+                    
+                    return db.collection('activity_logs').add({
+                        message: logMsg,
+                        type: 'signup',
+                        phone: phone,
+                        referral_code: referralCode || null,
+                        created_at: firebase.firestore.FieldValue.serverTimestamp()
+                    }).catch(function(e) { console.warn('Log skipped'); });
+                })
+                .then(function() {
+                    // Add to ticker
+                    if (typeof addTickerMessage === 'function') {
+                        addTickerMessage({
+                            icon: '<i class="fas fa-user-plus"></i>',
+                            message: 'Mwanachama mpya:',
+                            username: phone,
+                            time: 'Sasa hivi'
+                        });
+                    }
+                });
+        });
+}
+
+// Auto-login after signup
+function performPhoneLogin(phone, password, submitBtn) {
+    var email = phone.replace(/\+/g, '') + '@sunwealth.user';
+    
+    auth.signInWithEmailAndPassword(email, password)
+        .then(function() {
+            console.log('✅ Auto-login successful');
+            showToast('<i class="fas fa-check-circle"></i> Karibu! Akaunti imefunguliwa.', 'success');
+            
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
+            }
+        })
+        .catch(function(e) {
+            console.log('Auto-login failed, showing login modal');
+            showLoginModal();
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Fungua Akaunti';
+            }
+        });
+}
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId, button) {
+    var input = document.getElementById(inputId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.innerHTML = '<i class="fas fa-eye-slash"></i>';
+    } else {
+        input.type = 'password';
+        button.innerHTML = '<i class="fas fa-eye"></i>';
+    }
 }
 
 // Check if username is unique
@@ -4327,7 +4260,7 @@ showSignupModal = function() {
         openModal('signup-modal');
     }
     
-    // Check for stored referral code from URL
+    // Check for stored referral code
     var storedRef = sessionStorage.getItem('sunwealth_ref');
     var refField = document.getElementById('signup-referral');
     var refBanner = document.getElementById('referral-banner');
@@ -6950,3 +6883,704 @@ function refreshSolarProjectsAdmin() {
     });
 }
 
+// ============================================
+// Language System - Swahili ↔ English
+// ============================================
+
+// Language translations
+const translations = {
+    'sw': {
+        // Navigation
+        'home': 'Nyumbani',
+        'packages': 'Vifurushi',
+        'investments': 'Uwekezaji',
+        'wallet': 'Pochi',
+        'profile': 'Wasifu',
+        'transactions': 'Historia',
+        'referral': 'Ushirika',
+        'logout': 'Toka',
+        'dashboard': 'Dashibodi',
+        'approvals': 'Maombi',
+        'users': 'Wateja',
+        'settings': 'Mipangilio',
+        'overview': 'Muhtasari',
+        'history': 'Historia',
+        'bank_accounts': 'Akaunti za Benki',
+        'social_links': 'Viungo vya Mitandao',
+        'solar_projects': 'Miradi ya Jua',
+        
+        // Header
+        'login': 'Ingia',
+        'signup': 'Jisajili',
+        'logout': 'Toka',
+        'language': 'English',
+        
+        // Hero
+        'hero_title': 'Wekeza kwenye Nishati ya Jua na <span>SunWealth</span>',
+        'hero_subtitle': 'Pata mapato ya kila siku kutoka kwenye mashamba ya kisasa ya jua. Anza na TZS 7,000 tu.',
+        
+        // Home
+        'investment_packages': 'Vifurushi vya Uwekezaji',
+        'live_activity': 'Shughuli za Moja kwa Moja',
+        
+        // Packages
+        'choose_plan': 'Chagua mpango wako wa uwekezaji na anza kupata mapato kila siku',
+        'amount': 'Kiasi',
+        'daily_income': 'Kila Siku',
+        'total_income': 'Jumla',
+        'duration': 'Muda',
+        'days': 'Siku',
+        'buy_now': 'Nunua Sasa',
+        'insufficient_balance': 'Salio halitoshi! Tafadhali weka amana kwanza.',
+        'confirm_purchase': 'Thibitisha Ununuzi',
+        'purchase_success': 'Ununuzi umefanikiwa!',
+        
+        // Investments
+        'active_investments': 'Uwekezaji Hai',
+        'total_invested': 'Jumla Imewekezwa',
+        'total_earnings': 'Mapato Yote',
+        'active_count': 'Inayoendelea',
+        'real_time_earnings': 'Mapato Yanayoingia Sasa Hivi',
+        'no_investments': 'Hakuna Uwekezaji Hai',
+        'start_now': 'Anza sasa upate mapato ya kila siku!',
+        'view_packages': 'Angalia Vifurushi',
+        'days_remaining': 'Siku Zilizobaki',
+        'expected_total': 'Jumla Tarajiwa',
+        'current_earnings': 'Mapato Sasa',
+        
+        // Wallet
+        'balance': 'Salio',
+        'todays_income': 'Mapato ya Leo',
+        'deposit': 'Weka Amana',
+        'withdraw': 'Toa Pesa',
+        'recent_transactions': 'Muamala wa Hivi Karibuni',
+        'no_transactions': 'Hakuna muamala',
+        
+        // Profile
+        'my_profile': 'Wasifu Wangu',
+        'edit_profile': 'Hariri Wasifu',
+        'full_name': 'Jina Kamili',
+        'phone_number': 'Namba ya Simu',
+        'email': 'Barua Pepe',
+        'referral_code': 'Namba ya Ushirika',
+        'join_date': 'Tarehe ya Kujiunga',
+        'role': 'Wadhifa',
+        'investor': 'Mwekezaji',
+        'admin': 'Msimamizi',
+        'super_admin': 'Msimamizi Mkuu',
+        
+        // Referral
+        'referral_program': 'Programu ya Ushirika',
+        'your_referral_link': 'Kiungo Chako cha Ushirika',
+        'your_referral_code': 'Namba Yako ya Ushirika',
+        'share_link': 'Shiriki Kiungo',
+        'share_whatsapp': 'Shiriki kwa WhatsApp',
+        'copy_link': 'Nakili Kiungo',
+        'copy_code': 'Nakili Namba',
+        'total_bonus': 'Jumla ya Bonasi',
+        'total_referrals': 'Jumla ya Washirika',
+        'how_it_works': 'Jinsi Inavyofanya Kazi',
+        'step_1': 'Shiriki kiungo chako au namba ya ushirika na marafiki',
+        'step_2': 'Mshiriki wako ajisajili na kuweka amana ya kwanza',
+        'step_3': 'Pata 10% ya amana yao ya kwanza moja kwa moja kwenye salio lako!',
+        'referral_list': 'Orodha ya Washirika Wangu',
+        'no_referrals': 'Hakuna washirika bado',
+        
+        // Admin
+        'admin_dashboard': 'Dashibodi ya Msimamizi',
+        'pending': 'Zinazosubiri',
+        'pending_deposits': 'Amana Zinasubiri',
+        'pending_withdrawals': 'Utoaji Unasubiri',
+        'total_users': 'Jumla ya Wateja',
+        'total_investors': 'Wawekezaji',
+        'active_investments': 'Uwekezaji Hai',
+        'approved_today': 'Imeidhinishwa Leo',
+        'total_deposits': 'Jumla ya Amana',
+        'total_withdrawals': 'Jumla ya Utoaji',
+        'referral_bonuses': 'Bonasi za Ushirika',
+        'bonus_count': 'Idadi ya Bonasi',
+        'total_invested': 'Jumla Imewekezwa',
+        'recent_activities': 'Shughuli za Hivi Karibuni',
+        'no_activities': 'Hakuna shughuli za hivi karibuni',
+        
+        // Super Admin
+        'super_dashboard': 'Dashibodi ya Msimamizi Mkuu',
+        'platform_overview': 'Muhtasari wa Jukwaa',
+        'admins': 'Wasimamizi',
+        'manage_admins': 'Usimamizi wa Wasimamizi',
+        'add_admin': 'Ongeza Msimamizi',
+        
+        // User Management
+        'user_management': 'Usimamizi wa Wateja',
+        'search': 'Tafuta kwa jina, barua pepe, au simu...',
+        'all': 'Wote',
+        'active': 'Hai',
+        'inactive': 'Imezuiliwa',
+        'actions': 'Vitendo',
+        'view': 'Angalia',
+        'edit': 'Hariri',
+        'add_balance': 'Ongeza Salio',
+        'toggle_status': 'Badili Hali',
+        'disable': 'Zima',
+        'enable': 'Washa',
+        
+        // System Config
+        'system_settings': 'Mipangilio ya Mfumo',
+        'general_settings': 'Mipangilio Mkuu',
+        'financial_settings': 'Mipangilio ya Fedha',
+        'operating_hours': 'Saa za Kufanya Kazi',
+        'package_settings': 'Mipangilio ya Vifurushi',
+        'security_settings': 'Mipangilio ya Usalama',
+        'notification_settings': 'Mipangilio ya Taarifa',
+        'maintenance_mode': 'Hali ya Matengenezo',
+        'save_settings': 'Hifadhi Mipangilio Yote',
+        'reset_settings': 'Rejesha Mipangilio ya Awali',
+        
+        // Common
+        'confirm': 'Thibitisha',
+        'cancel': 'Ghairi',
+        'save': 'Hifadhi',
+        'success': 'Imefanikiwa!',
+        'error': 'Kosa!',
+        'loading': 'Inapakia...',
+        'please_wait': 'Tafadhali subiri...',
+        'back': 'Rudi',
+        'next': 'Endelea',
+        'close': 'Funga',
+        'select': 'Chagua',
+        'filter': 'Chuja',
+        'status': 'Hali',
+        'date': 'Tarehe',
+        'time': 'Muda',
+        'amount': 'Kiasi',
+        'type': 'Aina',
+        
+        // Toast Messages
+        'login_success': 'Karibu tena!',
+        'logout_success': 'Umetoka kwenye mfumo. Karibu tena!',
+        'profile_updated': 'Wasifu umesasishwa!',
+        'deposit_success': 'Amana imetumwa! Inasubiri kuidhinishwa.',
+        'withdraw_success': 'Ombi la utoaji limetumwa!',
+        'purchase_success_msg': 'Ununuzi umefanikiwa!',
+        'referral_copied': 'Namba ya ushirika imenakiliwa!',
+        'link_copied': 'Kiungo kimenakiliwa!',
+        'insufficient_balance_msg': 'Salio halitoshi. Tafadhali angalia salio lako.',
+        'error_occurred': 'Imeshindwa. Tafadhali jaribu tena.',
+        
+        // Modals
+        'login_title': 'Ingia (Login)',
+        'signup_title': 'Jisajili (Sign Up)',
+        'forgot_password': 'Umesahau Nywila?',
+        'remember_me': 'Nikumbuke',
+        'password': 'Nywila',
+        'confirm_password': 'Thibitisha Nywila',
+        'terms_agree': 'Nimekubali Masharti na Vigezo',
+        'terms_title': 'Masharti na Vigezo',
+        'already_account': 'Tayari una akaunti?',
+        'no_account': 'Huna akaunti?',
+        
+        // Deposit
+        'select_bank': 'Chagua Njia ya Malipo',
+        'your_details': 'Taarifa Zako',
+        'send_payment': 'Tuma Malipo',
+        'confirm_deposit': 'Thibitisha Amana',
+        'transaction_ref': 'Namba ya Muamala',
+        'payment_instructions': 'Maelekezo ya Malipo',
+        'important_note': 'Muhimu: Hifadhi namba ya muamala baada ya kutuma malipo.',
+        
+        // Withdraw
+        'withdrawal_method': 'Njia ya Kupokea',
+        'account_number': 'Namba ya Simu / Akaunti',
+        'account_holder': 'Jina la Mmiliki wa Akaunti',
+        'withdraw_amount': 'Kiasi cha Kutoa',
+        'fee_info': 'Ada ya utoaji ni 10% ya kiasi unachotoa',
+        'operating_hours_info': 'Saa za Utoaji: 04:30 AM - 07:00 PM',
+        'net_amount': 'Utakachopokea',
+        
+        // Investment Purchase
+        'confirm_purchase_title': 'Thibitisha Ununuzi',
+        'package': 'Kifurushi',
+        'invest_amount': 'Kiasi cha Kuwekeza',
+        'remaining_balance': 'Salio Baada ya Ununuzi',
+        'current_balance': 'Salio Lako Sasa',
+        'deposit_now': 'Weka Amana Sasa'
+    },
+    'en': {
+        // Navigation
+        'home': 'Home',
+        'packages': 'Packages',
+        'investments': 'Investments',
+        'wallet': 'Wallet',
+        'profile': 'Profile',
+        'transactions': 'History',
+        'referral': 'Referral',
+        'logout': 'Logout',
+        'dashboard': 'Dashboard',
+        'approvals': 'Approvals',
+        'users': 'Users',
+        'settings': 'Settings',
+        'overview': 'Overview',
+        'history': 'History',
+        'bank_accounts': 'Bank Accounts',
+        'social_links': 'Social Links',
+        'solar_projects': 'Solar Projects',
+        
+        // Header
+        'login': 'Login',
+        'signup': 'Sign Up',
+        'logout': 'Logout',
+        'language': 'Swahili',
+        
+        // Hero
+        'hero_title': 'Invest in Solar Energy with <span>SunWealth</span>',
+        'hero_subtitle': 'Earn daily income from high-tech solar farms. Start with just TZS 7,000.',
+        
+        // Home
+        'investment_packages': 'Investment Packages',
+        'live_activity': 'Live Activity',
+        
+        // Packages
+        'choose_plan': 'Choose your investment plan and start earning daily',
+        'amount': 'Amount',
+        'daily_income': 'Daily Income',
+        'total_income': 'Total Income',
+        'duration': 'Duration',
+        'days': 'Days',
+        'buy_now': 'Buy Now',
+        'insufficient_balance': 'Insufficient balance! Please deposit first.',
+        'confirm_purchase': 'Confirm Purchase',
+        'purchase_success': 'Purchase Successful!',
+        
+        // Investments
+        'active_investments': 'Active Investments',
+        'total_invested': 'Total Invested',
+        'total_earnings': 'Total Earnings',
+        'active_count': 'Active Count',
+        'real_time_earnings': 'Real-Time Earnings',
+        'no_investments': 'No Active Investments',
+        'start_now': 'Start now and earn daily income!',
+        'view_packages': 'View Packages',
+        'days_remaining': 'Days Remaining',
+        'expected_total': 'Expected Total',
+        'current_earnings': 'Current Earnings',
+        
+        // Wallet
+        'balance': 'Balance',
+        'todays_income': 'Today\'s Income',
+        'deposit': 'Deposit',
+        'withdraw': 'Withdraw',
+        'recent_transactions': 'Recent Transactions',
+        'no_transactions': 'No transactions',
+        
+        // Profile
+        'my_profile': 'My Profile',
+        'edit_profile': 'Edit Profile',
+        'full_name': 'Full Name',
+        'phone_number': 'Phone Number',
+        'email': 'Email',
+        'referral_code': 'Referral Code',
+        'join_date': 'Join Date',
+        'role': 'Role',
+        'investor': 'Investor',
+        'admin': 'Admin',
+        'super_admin': 'Super Admin',
+        
+        // Referral
+        'referral_program': 'Referral Program',
+        'your_referral_link': 'Your Referral Link',
+        'your_referral_code': 'Your Referral Code',
+        'share_link': 'Share Link',
+        'share_whatsapp': 'Share via WhatsApp',
+        'copy_link': 'Copy Link',
+        'copy_code': 'Copy Code',
+        'total_bonus': 'Total Bonus',
+        'total_referrals': 'Total Referrals',
+        'how_it_works': 'How It Works',
+        'step_1': 'Share your referral link or code with friends',
+        'step_2': 'Your referral signs up and makes their first deposit',
+        'step_3': 'Get 10% of their first deposit directly to your balance!',
+        'referral_list': 'My Referrals List',
+        'no_referrals': 'No referrals yet',
+        
+        // Admin
+        'admin_dashboard': 'Admin Dashboard',
+        'pending': 'Pending',
+        'pending_deposits': 'Pending Deposits',
+        'pending_withdrawals': 'Pending Withdrawals',
+        'total_users': 'Total Users',
+        'total_investors': 'Total Investors',
+        'active_investments': 'Active Investments',
+        'approved_today': 'Approved Today',
+        'total_deposits': 'Total Deposits',
+        'total_withdrawals': 'Total Withdrawals',
+        'referral_bonuses': 'Referral Bonuses',
+        'bonus_count': 'Bonus Count',
+        'total_invested': 'Total Invested',
+        'recent_activities': 'Recent Activities',
+        'no_activities': 'No recent activities',
+        
+        // Super Admin
+        'super_dashboard': 'Super Admin Dashboard',
+        'platform_overview': 'Platform Overview',
+        'admins': 'Admins',
+        'manage_admins': 'Admin Management',
+        'add_admin': 'Add Admin',
+        
+        // User Management
+        'user_management': 'User Management',
+        'search': 'Search by name, email, or phone...',
+        'all': 'All',
+        'active': 'Active',
+        'inactive': 'Inactive',
+        'actions': 'Actions',
+        'view': 'View',
+        'edit': 'Edit',
+        'add_balance': 'Add Balance',
+        'toggle_status': 'Toggle Status',
+        'disable': 'Disable',
+        'enable': 'Enable',
+        
+        // System Config
+        'system_settings': 'System Settings',
+        'general_settings': 'General Settings',
+        'financial_settings': 'Financial Settings',
+        'operating_hours': 'Operating Hours',
+        'package_settings': 'Package Settings',
+        'security_settings': 'Security Settings',
+        'notification_settings': 'Notification Settings',
+        'maintenance_mode': 'Maintenance Mode',
+        'save_settings': 'Save All Settings',
+        'reset_settings': 'Reset Settings',
+        
+        // Common
+        'confirm': 'Confirm',
+        'cancel': 'Cancel',
+        'save': 'Save',
+        'success': 'Success!',
+        'error': 'Error!',
+        'loading': 'Loading...',
+        'please_wait': 'Please wait...',
+        'back': 'Back',
+        'next': 'Next',
+        'close': 'Close',
+        'select': 'Select',
+        'filter': 'Filter',
+        'status': 'Status',
+        'date': 'Date',
+        'time': 'Time',
+        'amount': 'Amount',
+        'type': 'Type',
+        
+        // Toast Messages
+        'login_success': 'Welcome back!',
+        'logout_success': 'Logged out. Come back soon!',
+        'profile_updated': 'Profile updated!',
+        'deposit_success': 'Deposit submitted! Pending approval.',
+        'withdraw_success': 'Withdrawal request submitted!',
+        'purchase_success_msg': 'Purchase successful!',
+        'referral_copied': 'Referral code copied!',
+        'link_copied': 'Link copied!',
+        'insufficient_balance_msg': 'Insufficient balance. Please check your balance.',
+        'error_occurred': 'Failed. Please try again.',
+        
+        // Modals
+        'login_title': 'Login',
+        'signup_title': 'Sign Up',
+        'forgot_password': 'Forgot Password?',
+        'remember_me': 'Remember Me',
+        'password': 'Password',
+        'confirm_password': 'Confirm Password',
+        'terms_agree': 'I agree to the Terms and Conditions',
+        'terms_title': 'Terms and Conditions',
+        'already_account': 'Already have an account?',
+        'no_account': 'Don\'t have an account?',
+        
+        // Deposit
+        'select_bank': 'Select Payment Method',
+        'your_details': 'Your Details',
+        'send_payment': 'Send Payment',
+        'confirm_deposit': 'Confirm Deposit',
+        'transaction_ref': 'Transaction Reference',
+        'payment_instructions': 'Payment Instructions',
+        'important_note': 'Important: Save your transaction reference/ID after sending payment.',
+        
+        // Withdraw
+        'withdrawal_method': 'Withdrawal Method',
+        'account_number': 'Phone / Account Number',
+        'account_holder': 'Account Holder Name',
+        'withdraw_amount': 'Withdrawal Amount',
+        'fee_info': 'Withdrawal fee is 10% of the amount you withdraw',
+        'operating_hours_info': 'Operating Hours: 04:30 AM - 07:00 PM',
+        'net_amount': 'Net Amount',
+        
+        // Investment Purchase
+        'confirm_purchase_title': 'Confirm Purchase',
+        'package': 'Package',
+        'invest_amount': 'Investment Amount',
+        'remaining_balance': 'Balance After Purchase',
+        'current_balance': 'Your Current Balance',
+        'deposit_now': 'Deposit Now'
+    }
+};
+
+// Current language state
+let currentLang = 'en'; // Default to English
+
+// Function to detect user's browser language
+function detectLanguage() {
+    const browserLang = navigator.language || navigator.languages?.[0] || 'en';
+    return browserLang.startsWith('sw') ? 'sw' : 'en';
+}
+
+// Initialize language
+function initLanguage() {
+    // Check localStorage first
+    const savedLang = localStorage.getItem('sunwealth_lang');
+    if (savedLang && (savedLang === 'sw' || savedLang === 'en')) {
+        currentLang = savedLang;
+    } else {
+        // Detect browser language
+        currentLang = detectLanguage();
+        localStorage.setItem('sunwealth_lang', currentLang);
+    }
+    
+    applyLanguage(currentLang);
+}
+
+// Toggle language
+function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'sw' : 'en';
+    localStorage.setItem('sunwealth_lang', currentLang);
+    applyLanguage(currentLang);
+    
+    // Show toast notification
+    const msg = currentLang === 'sw' ? 'Lugha imebadilishwa hadi Kiswahili' : 'Language changed to English';
+    if (typeof showToast === 'function') {
+        showToast('🌍 ' + msg, 'success');
+    }
+}
+
+// Apply language to all elements
+function applyLanguage(lang) {
+    const t = translations[lang];
+    if (!t) return;
+    
+    // Update language labels
+    document.getElementById('lang-label').textContent = lang === 'sw' ? 'SW' : 'EN';
+    document.getElementById('sidebar-lang-label').textContent = lang === 'sw' ? 'Kiswahili' : 'English';
+    document.getElementById('bottom-lang-label').textContent = lang === 'sw' ? 'SW' : 'EN';
+    
+    // Apply translations to all elements with data-i18n attribute
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = t[key];
+            } else {
+                el.innerHTML = t[key];
+            }
+        }
+    });
+    
+    // Update navigation links
+    updateNavigation(lang);
+    
+    // Update hero section
+    const heroTitle = document.querySelector('.hero h1');
+    const heroSubtitle = document.querySelector('.hero .subtitle');
+    if (heroTitle) heroTitle.innerHTML = t.hero_title;
+    if (heroSubtitle) heroSubtitle.textContent = t.hero_subtitle;
+    
+    // Update section titles
+    updateSectionTitles(lang);
+    
+    // Update dashboard stats
+    updateDashboardStats(lang);
+    
+    // Update modals
+    updateModals(lang);
+    
+    console.log('🌍 Language applied:', lang);
+}
+
+// Update navigation links
+function updateNavigation(lang) {
+    const t = translations[lang];
+    
+    // Update sidebar links
+    document.querySelectorAll('.sidebar-link[data-page]').forEach(el => {
+        const page = el.getAttribute('data-page');
+        const keyMap = {
+            'home': 'home',
+            'packages': 'packages',
+            'investments': 'investments',
+            'wallet': 'wallet',
+            'profile': 'profile',
+            'transactions': 'transactions',
+            'referral': 'referral',
+            'admin-dashboard': 'dashboard',
+            'pending-approvals': 'approvals',
+            'all-transactions': 'history',
+            'user-management': 'users',
+            'system-config': 'settings',
+            'super-dashboard': 'overview',
+            'bank-accounts': 'bank_accounts',
+            'social-links': 'social_links',
+            'solar-projects': 'solar_projects'
+        };
+        const key = keyMap[page] || page;
+        if (t[key] !== undefined) {
+            // Preserve the icon
+            const icon = el.querySelector('i');
+            if (icon) {
+                el.innerHTML = icon.outerHTML + ' ' + t[key];
+            } else {
+                el.textContent = t[key];
+            }
+        }
+    });
+    
+    // Update bottom nav items
+    document.querySelectorAll('.bottom-nav-item[data-page]').forEach(el => {
+        const page = el.getAttribute('data-page');
+        const keyMap = {
+            'home': 'home',
+            'packages': 'packages',
+            'wallet': 'wallet',
+            'profile': 'profile',
+            'transactions': 'history',
+            'referral': 'referral',
+            'admin-dashboard': 'dashboard',
+            'pending-approvals': 'approvals',
+            'all-transactions': 'history',
+            'user-management': 'users',
+            'system-config': 'settings',
+            'super-dashboard': 'overview'
+        };
+        const key = keyMap[page] || page;
+        if (t[key] !== undefined) {
+            const icon = el.querySelector('i');
+            const span = el.querySelector('span');
+            if (icon && span) {
+                span.textContent = t[key];
+            }
+        }
+    });
+}
+
+// Update section titles
+function updateSectionTitles(lang) {
+    const t = translations[lang];
+    const sectionMap = {
+        'packages-section h2': 'packages',
+        'investments-section h2': 'investments',
+        'wallet-section h2': 'wallet',
+        'profile-section h2': 'profile',
+        'transactions-section h2': 'history',
+        'referral-section h2': 'referral',
+        'admin-dashboard-section h2': 'dashboard',
+        'pending-approvals-section h2': 'approvals',
+        'all-transactions-section h2': 'history',
+        'user-management-section h2': 'users',
+        'system-config-section h2': 'settings',
+        'super-dashboard-section h2': 'overview',
+        'bank-accounts-section h2': 'bank_accounts',
+        'social-links-section h2': 'social_links',
+        'solar-projects-section h2': 'solar_projects'
+    };
+    
+    for (const [selector, key] of Object.entries(sectionMap)) {
+        const el = document.querySelector(selector);
+        if (el && t[key] !== undefined) {
+            // Preserve any icon in the h2
+            const icon = el.querySelector('i');
+            if (icon) {
+                el.innerHTML = icon.outerHTML + ' ' + t[key];
+            } else {
+                el.textContent = t[key];
+            }
+        }
+    }
+}
+
+// Update dashboard stats
+function updateDashboardStats(lang) {
+    const t = translations[lang];
+    
+    // Admin dashboard labels
+    document.querySelectorAll('.metric-label').forEach(el => {
+        const text = el.textContent.trim();
+        const keyMap = {
+            '⏳ Zinazosubiri': 'pending',
+            '📥 Amana Zinasubiri': 'pending_deposits',
+            '📤 Utoaji Unasubiri': 'pending_withdrawals',
+            '👥 Jumla ya Wateja': 'total_users',
+            '💼 Wawekezaji': 'total_investors',
+            '📊 Uwekezaji Hai': 'active_investments',
+            '✅ Imeidhinishwa Leo': 'approved_today',
+            '💰 Jumla ya Amana': 'total_deposits',
+            '💸 Jumla ya Utoaji': 'total_withdrawals',
+            '🤝 Bonasi za Ushirika': 'referral_bonuses',
+            '🔢 Idadi ya Bonasi': 'bonus_count',
+            '💵 Jumla Imewekezwa': 'total_invested'
+        };
+        const key = keyMap[text] || text;
+        if (t[key] !== undefined) {
+            el.textContent = t[key];
+        }
+    });
+}
+
+// Update modals
+function updateModals(lang) {
+    const t = translations[lang];
+    
+    // Login modal
+    const loginTitle = document.querySelector('#login-modal h2');
+    if (loginTitle) loginTitle.textContent = t.login_title;
+    
+    // Signup modal
+    const signupTitle = document.querySelector('#signup-modal h2');
+    if (signupTitle) signupTitle.textContent = t.signup_title;
+    
+    // Deposit modal
+    const depositTitle = document.querySelector('#deposit-modal h2');
+    if (depositTitle) depositTitle.textContent = t.deposit;
+    
+    // Withdraw modal
+    const withdrawTitle = document.querySelector('#withdraw-modal h2');
+    if (withdrawTitle) withdrawTitle.textContent = t.withdraw;
+}
+
+// Helper function to translate a single text
+function translate(text, lang) {
+    const t = translations[lang || currentLang];
+    return t[text] || text;
+}
+
+// Set up data-i18n attributes for static text
+function setupI18nAttributes() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const lang = currentLang;
+        const t = translations[lang];
+        if (t[key] !== undefined) {
+            if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                el.placeholder = t[key];
+            } else {
+                el.textContent = t[key];
+            }
+        }
+    });
+}
+
+// Initialize language on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initLanguage();
+});
+
+// Export for use in main.js
+window.translations = translations;
+window.currentLang = currentLang;
+window.toggleLanguage = toggleLanguage;
+window.translate = translate;
