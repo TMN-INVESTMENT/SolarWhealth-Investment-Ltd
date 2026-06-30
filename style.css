@@ -1849,3 +1849,22 @@ tr:hover td {
 .referral-input-bw:hover:not([readonly]) {
     border-color: #666 !important;
 }
+
+/* Logo styling */
+.modal-content img[alt*="SunWealth"] {
+    transition: transform 0.3s ease;
+}
+
+.modal-content img[alt*="SunWealth"]:hover {
+    transform: scale(1.05);
+}
+
+/* Logo in header */
+.logo img {
+    border-radius: 4px;
+    transition: opacity 0.3s ease;
+}
+
+.logo img:hover {
+    opacity: 0.9;
+}

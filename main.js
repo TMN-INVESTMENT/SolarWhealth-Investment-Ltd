@@ -255,7 +255,7 @@ function navigateTo(page) {
         'profile': 'profile-section',
         'bank-accounts': 'bank-accounts-section',
         'social-links': 'social-links-section',
-        // In sectionMap:
+'solar-projects': 'solar-projects-section',
 'solar-projects': 'solar-projects-section',
 
 // In refresh conditions:
@@ -289,6 +289,7 @@ else if (page === 'referral') {
     refreshReferral();
     updateReferralInfo();
 }
+else if (page === 'solar-projects') refreshSolarProjectsAdmin();
 else if (page === 'solar-projects') refreshSolarProjectsAdmin();
 else if (page === 'social-links') refreshSocialLinksAdmin();
 
@@ -844,11 +845,11 @@ function handleLogin(event) {
             console.log('✅ Login successful');
             
             closeModal('login-modal');
-            showToast('<i class="fas fa-check-circle"></i> Karibu tena!', 'success');
+            showToast('Karibu tena!', 'success');
             
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
+                submitBtn.innerHTML = 'Ingia (Login)';
             }
             
             // Reset form
@@ -871,7 +872,7 @@ function handleLogin(event) {
             
             if (submitBtn) {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Ingia (Login)';
+                submitBtn.innerHTML = 'Ingia (Login)';
             }
             
             var msg = getLoginErrorMessage(error.code);
@@ -7584,3 +7585,221 @@ window.translations = translations;
 window.currentLang = currentLang;
 window.toggleLanguage = toggleLanguage;
 window.translate = translate;
+
+// ===== SOLAR PROJECTS ADMIN FUNCTIONS =====
+
+// Show add solar project modal
+function showAddSolarProjectModal() {
+    document.getElementById('solar-project-modal-title').innerHTML = '<i class="fas fa-plus-circle"></i> Ongeza Mradi wa Jua';
+    document.getElementById('solar-project-edit-id').value = '';
+    document.getElementById('solar-project-form').reset();
+    document.getElementById('solar-project-active').checked = true;
+    document.getElementById('solar-project-error').style.display = 'none';
+    openModal('solar-project-modal');
+}
+
+// Edit solar project
+function editSolarProject(id) {
+    db.collection('solar_projects').doc(id).get()
+    .then(function(doc) {
+        if (!doc.exists) {
+            showToast('Mradi haujapatikana', 'error');
+            return;
+        }
+        
+        var data = doc.data();
+        
+        document.getElementById('solar-project-modal-title').innerHTML = '<i class="fas fa-edit"></i> Hariri Mradi';
+        document.getElementById('solar-project-edit-id').value = id;
+        document.getElementById('solar-project-title').value = data.title || '';
+        document.getElementById('solar-project-description').value = data.description || '';
+        document.getElementById('solar-project-image').value = data.image_url || '';
+        document.getElementById('solar-project-link').value = data.link_url || '';
+        document.getElementById('solar-project-youtube').value = data.youtube_url || '';
+        document.getElementById('solar-project-video').value = data.video_url || '';
+        document.getElementById('solar-project-type').value = data.type || 'solar_farm';
+        document.getElementById('solar-project-order').value = data.order || 0;
+        document.getElementById('solar-project-active').checked = data.status === 'active';
+        document.getElementById('solar-project-error').style.display = 'none';
+        
+        openModal('solar-project-modal');
+    })
+    .catch(function(e) {
+        showToast('Error: ' + e.message, 'error');
+    });
+}
+
+// Save solar project (add or edit)
+function saveSolarProject(event) {
+    event.preventDefault();
+    
+    var editId = document.getElementById('solar-project-edit-id').value;
+    var title = document.getElementById('solar-project-title').value.trim();
+    var description = document.getElementById('solar-project-description').value.trim();
+    var imageUrl = document.getElementById('solar-project-image').value.trim();
+    var linkUrl = document.getElementById('solar-project-link').value.trim();
+    var youtubeUrl = document.getElementById('solar-project-youtube').value.trim();
+    var videoUrl = document.getElementById('solar-project-video').value.trim();
+    var type = document.getElementById('solar-project-type').value;
+    var order = parseInt(document.getElementById('solar-project-order').value) || 0;
+    var isActive = document.getElementById('solar-project-active').checked;
+    var err = document.getElementById('solar-project-error');
+    
+    if (err) err.style.display = 'none';
+    
+    // Validation
+    if (!title) {
+        if (err) { err.textContent = 'Kichwa cha mradi kinahitajika'; err.style.display = 'block'; }
+        return;
+    }
+    if (!description) {
+        if (err) { err.textContent = 'Maelezo ya mradi yanahitajika'; err.style.display = 'block'; }
+        return;
+    }
+    if (!imageUrl) {
+        if (err) { err.textContent = 'Kiungo cha picha kinahitajika'; err.style.display = 'block'; }
+        return;
+    }
+    
+    var projectData = {
+        title: title,
+        description: description,
+        image_url: imageUrl,
+        link_url: linkUrl,
+        youtube_url: youtubeUrl,
+        video_url: videoUrl,
+        type: type,
+        order: order,
+        status: isActive ? 'active' : 'inactive',
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    var promise;
+    if (editId) {
+        // Update existing
+        promise = db.collection('solar_projects').doc(editId).update(projectData);
+    } else {
+        // Add new
+        projectData.created_at = firebase.firestore.FieldValue.serverTimestamp();
+        promise = db.collection('solar_projects').add(projectData);
+    }
+    
+    promise.then(function() {
+        closeModal('solar-project-modal');
+        showToast(editId ? 'Mradi umesasishwa!' : 'Mradi umeongezwa!', 'success');
+        refreshSolarProjectsAdmin();
+        loadSolarSlideshow(); // Refresh homepage slideshow
+    })
+    .catch(function(e) {
+        if (err) { err.textContent = 'Error: ' + e.message; err.style.display = 'block'; }
+        console.error('Save project error:', e);
+    });
+}
+
+// Delete solar project
+function deleteSolarProject(id) {
+    if (!confirm('Unahakika unataka kufuta mradi huu? Hii haiwezi kutenduliwa.')) return;
+    
+    db.collection('solar_projects').doc(id).delete()
+    .then(function() {
+        showToast('Mradi umefutwa!', 'warning');
+        refreshSolarProjectsAdmin();
+        loadSolarSlideshow(); // Refresh homepage slideshow
+    })
+    .catch(function(e) {
+        showToast('Error: ' + e.message, 'error');
+        console.error('Delete project error:', e);
+    });
+}
+
+// Toggle solar project status (activate/deactivate)
+function toggleSolarProjectStatus(id, currentStatus) {
+    var newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    var action = newStatus === 'active' ? 'kuwashwa' : 'kuzimwa';
+    
+    db.collection('solar_projects').doc(id).update({
+        status: newStatus,
+        updated_at: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(function() {
+        showToast('Mradi ume' + action + '!', 'success');
+        refreshSolarProjectsAdmin();
+        loadSolarSlideshow(); // Refresh homepage slideshow
+    })
+    .catch(function(e) {
+        showToast('Error: ' + e.message, 'error');
+        console.error('Toggle status error:', e);
+    });
+}
+
+// Refresh solar projects admin list
+function refreshSolarProjectsAdmin() {
+    var container = document.getElementById('solar-projects-admin-list');
+    if (!container) return;
+    
+    container.innerHTML = '<p style="color:var(--text-secondary);text-align:center;padding:2rem;">' +
+        '<i class="fas fa-spinner fa-spin"></i> Inapakia miradi...</p>';
+    
+    db.collection('solar_projects')
+        .orderBy('order', 'asc')
+        .get()
+    .then(function(snap) {
+        if (snap.empty) {
+            container.innerHTML = 
+                '<div style="text-align:center;padding:3rem;">' +
+                '<p style="font-size:3rem;"><i class="fas fa-solar-panel"></i></p>' +
+                '<p style="color:var(--text-secondary);margin-bottom:1rem;">Hakuna miradi bado.</p>' +
+                '<button class="btn btn-primary" onclick="showAddSolarProjectModal()">' +
+                '<i class="fas fa-plus"></i> Ongeza Mradi Mpya</button></div>';
+            return;
+        }
+        
+        var html = '';
+        snap.forEach(function(doc) {
+            var data = doc.data();
+            var statusBadge = data.status === 'active' ? 
+                '<span class="badge badge-approved">Inaonekana</span>' : 
+                '<span class="badge badge-rejected">Imefichwa</span>';
+            
+            var hasVideo = data.video_url && data.video_url.length > 5;
+            var hasYoutube = data.youtube_url && data.youtube_url.length > 5;
+            
+            html += '<div style="border:1px solid var(--border-subtle);border-radius:10px;padding:1rem;margin-bottom:0.8rem;display:flex;gap:1rem;align-items:flex-start;">' +
+                // Image preview
+                '<div style="width:120px;height:80px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--bg-deep);">' +
+                    '<img src="' + escapeHtml(data.image_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;" ' +
+                        'onerror="this.parentNode.innerHTML=\'<div style=\\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--accent-solar);font-size:2rem;background:#0d1117;\\\'><i class=\\\'fas fa-solar-panel\\\'></i></div>\'">' +
+                '</div>' +
+                // Info
+                '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-weight:600;margin-bottom:0.2rem;">' + escapeHtml(data.title) + ' ' + statusBadge + '</div>' +
+                    '<div style="font-size:0.8rem;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + 
+                        escapeHtml(data.description || '') + '</div>' +
+                    '<div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.3rem;">' +
+                        'Nafasi: ' + (data.order || 0) + ' | Aina: ' + (data.type || 'solar_farm') +
+                        (hasVideo ? ' | <i class="fas fa-video" style="color:var(--accent-info);"></i> Video' : '') +
+                        (hasYoutube ? ' | <i class="fab fa-youtube" style="color:red;"></i> YouTube' : '') +
+                        (data.link_url ? ' | <i class="fas fa-link" style="color:var(--accent-solar);"></i> Link' : '') +
+                    '</div>' +
+                '</div>' +
+                // Actions
+                '<div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">' +
+                    '<button class="btn btn-info btn-sm" onclick="editSolarProject(\'' + doc.id + '\')" title="Hariri">' +
+                        '<i class="fas fa-edit"></i></button>' +
+                    '<button class="btn btn-warning btn-sm" onclick="toggleSolarProjectStatus(\'' + doc.id + '\', \'' + data.status + '\')" title="Badili Hali">' +
+                        (data.status === 'active' ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>') + '</button>' +
+                    '<button class="btn btn-danger btn-sm" onclick="deleteSolarProject(\'' + doc.id + '\')" title="Futa">' +
+                        '<i class="fas fa-trash"></i></button>' +
+                '</div>' +
+                '</div>';
+        });
+        
+        container.innerHTML = html;
+        console.log('✅ Solar projects loaded:', snap.size);
+    })
+    .catch(function(e) {
+        console.error('Load projects error:', e);
+        container.innerHTML = '<p style="color:var(--danger);text-align:center;padding:2rem;">' +
+            'Imeshindwa kupakia: ' + e.message + '</p>';
+    });
+}
